@@ -15,7 +15,7 @@ public class ParsingMSLaTTE {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         List<Task> tasks = mapper.readValue(
-                new File("src/main/resources/MS-LaTTE.json"),
+                new File("src/main/resources/MS-LaTTE_with_time_taken.json"),
                 mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
         );
 
@@ -30,9 +30,27 @@ public class ParsingMSLaTTE {
                 }
             }
         }
+        if (first.TimeJudgements != null) {
+            for (TimeJudgement lj : first.TimeJudgements) {
+                if (lj.isKnown()) {
+                    System.out.println("  Time: " + lj.Times);
+                }
+            }
+        }
+        if (first.TimeTaken != null) {
+            System.out.println("  Time: " + first.TimeTaken.EstimatedMinutes);
+        }
     }
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+class Task {
+    public String ID;
+    public String TaskTitle;
+    public List<LocJudgement> LocJudgements;
+    public List<TimeJudgement> TimeJudgements;
+    public TimeTaken TimeTaken;
+}
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class LocJudgement {
@@ -55,4 +73,10 @@ class TimeJudgement {
     }
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+class TimeTaken{
+    public int EstimatedMinutes;
+    public String EstimatedDuration;
+    public String Basis;
+}
 
