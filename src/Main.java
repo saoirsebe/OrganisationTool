@@ -1,8 +1,6 @@
 import java.time.*;
 import java.time.temporal.*;
 import java.util.UUID;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,38 +42,3 @@ class Task {
 }
 
 
-
-
-public class MsLatteLoader {
-    public static void main(String[] args) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(new File("MS-LaTTE.json"));
-
-        System.out.println("Total entries: " + root.size());
-
-        // Inspect the first entry
-        JsonNode first = root.get(0);
-        System.out.println(first.toPrettyString());
-
-        // Print title + known locations/times for the first 5 entries
-        for (int i = 0; i < 5; i++) {
-            JsonNode entry = root.get(i);
-            String title = entry.get("TaskTitle").asText();
-
-            System.out.print(title + " | locs: ");
-            for (JsonNode j : entry.get("LocJudgements")) {
-                if (j.get("Known").asBoolean()) {
-                    System.out.print(j.get("Locations") + " ");
-                }
-            }
-
-            System.out.print("| times: ");
-            for (JsonNode j : entry.get("TimeJudgements")) {
-                if (j.get("Known").asBoolean()) {
-                    System.out.print(j.get("Times") + " ");
-                }
-            }
-            System.out.println();
-        }
-    }
-}
