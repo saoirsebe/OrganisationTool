@@ -8,6 +8,7 @@ import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
+import edu.stanford.nlp.trees.GrammaticalRelation;
 
 import java.util.*;
 
@@ -46,43 +47,57 @@ public class ParsingToSchema {
 
 
         for (String taskDescription : taskDescriptions) {
-            CoreDocument doc = new CoreDocument("You " + taskDescription);
+            CoreDocument doc = new CoreDocument(taskDescription);
             pipeline.annotate(doc);  // Runs every annotator configured in pipeline. Doc is now made up of tokens, POS tags, lemmas, dependency trees, etc.
             CoreSentence sentence = doc.sentences().get(0);  // Grab sentence
             SemanticGraph deps = sentence.dependencyParse(); // Gets dependency tree for taskDescription
 
             IndexedWord root = deps.getFirstRoot();
-
-
             String action = root.lemma(); // The lemma of the root word should be the action
-            if (Objects.equals(action, "you")) {
+
+            /*
+            if (!root.tag().startsWith("VB")) {
                 System.out.println(deps);
-                CoreDocument doc1 = new CoreDocument(taskDescription);
+                CoreDocument doc1 = new CoreDocument("You " + taskDescription);
                 pipeline.annotate(doc1);  // Runs every annotator configured in pipeline. Doc is now made up of tokens, POS tags, lemmas, dependency trees, etc.
                 CoreSentence sentence1 = doc1.sentences().get(0);  // Grab sentence
                 SemanticGraph deps1 = sentence1.dependencyParse(); // Gets dependency tree for taskDescription
 
                 IndexedWord root1 = deps1.getFirstRoot();
-                action = root1.lemma();
+                if (!Objects.equals(root1.lemma(), "you")){
+                    action = root1.lemma();
+                    root = root1;
+                }
             }
+
+             */
 
 
             // Collect objects of the action
             List<String> objects = new ArrayList<>();
 
+            IndexedWord objHead = null;
             for (SemanticGraphEdge edge : deps.outgoingEdgeList(root)) {
                 String relation = edge.getRelation().getShortName();
 
-                if (relation.equals("obj") || relation.equals("obl") || relation.equals("dobj")) {
+                if (relation.equals("obj") || relation.equals("obl") || relation.equals("dobj") || relation.equals("dep") || relation.equals("compound") ) {
                     // Only add real target nouns
                     IndexedWord child = edge.getTarget();
-                    objects.add(child.lemma()); //Add each noun dependent of the action to objects list
+                    objHead = child;
+                    objects.add(objHead.lemma());
                 }
                 else if (relation.equals("compound:prt")) {
                     // Handle particle verbs (e.g. "turn off" -> "turn off" instead of just "turn")
                     action = action + " " + edge.getDependent().word();
                 }
             }
+
+
+            if (objHead == null || action.equals("tv") || action.equals("Nazgul") ||  action.equals("theatre")) {
+                System.out.println(deps);
+            }
+
+
 
             ParsedTaskDescription parsedTask = new ParsedTaskDescription(action, objects, null, taskDescription);
             parsedTasks.add(parsedTask);

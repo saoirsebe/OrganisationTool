@@ -93,6 +93,7 @@ class ParsingToSchemaTest {
                     parsed.targets,
                     parsed.target_type
             );
+
         }
 
         assertEquals(taskDescriptions.size(), parsedTasks.size());
