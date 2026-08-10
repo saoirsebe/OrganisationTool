@@ -1,24 +1,40 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 class ParsingToSchemaTest {
 
     private final ParsingToSchema taskParser = new ParsingToSchema();
 
     @Test
-    void returnParsedTasks_parsesSimpleImperativeCommands() {
-        List<String> taskDescriptions = Arrays.asList(
-                "Turn off the lights",
-                "Book a flight to Paris",
-                "Send an email to John",
-                "go to the gym"
+    void returnParsedTasks_parsesSimpleImperativeCommands() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        List<Task> tasks = mapper.readValue(
+                new File("src/main/resources/MS-LaTTE_synthetic.json"),
+                mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
         );
+
+        // List of the first 20 task descriptions
+        List<String> taskDescriptions = tasks.stream()
+                .limit(20)
+                .map(task -> task.TaskTitle)
+                .toList();
+
 
         List<ParsedTaskDescription> parsedTasks = taskParser.returnParsedTasks(taskDescriptions);
 
@@ -38,9 +54,9 @@ class ParsingToSchemaTest {
             assertNotNull(parsed.targets, "Target/objects list should not be null");
         }
 
-        // Spot-check particle-verb handling: "Turn off the lights" -> action "turn off"
-        assertEquals("turn off", parsedTasks.get(0).action,
-                "Particle 'off' should be appended to root lemma 'turn' via compound:prt");
+        // Spot-check particle-verb handling: "put on license sticker" -> action "put on"
+        assertEquals("put on", parsedTasks.get(8).action,
+                "Particle 'put' should be appended to root lemma 'on' via compound:prt");
     }
 
     @Test
@@ -52,13 +68,19 @@ class ParsingToSchemaTest {
     }
 
     @Test
-    void returnParsedTasks_printsParsedResultsForManualInspection() {
-        List<String> taskDescriptions = Arrays.asList(
-                "Turn off the lights",
-                "Book a flight to Paris",
-                "Send an email to John",
-                "Schedule a meeting with the design team tomorrow"
+    void returnParsedTasks_printsParsedResultsForManualInspection() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        List<Task> tasks = mapper.readValue(
+                new File("src/main/resources/MS-LaTTE_synthetic.json"),
+                mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
         );
+
+        // List of the first 20 task descriptions
+        List<String> taskDescriptions = tasks.stream()
+                .limit(20)
+                .map(task -> task.TaskTitle)
+                .toList();
 
         List<ParsedTaskDescription> parsedTasks = taskParser.returnParsedTasks(taskDescriptions);
 
