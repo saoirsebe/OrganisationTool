@@ -521,23 +521,23 @@
    },
    {
       "ID": "8523865",
-      "TaskTitle": "buy envelops",
+      "TaskTitle": "clothes shopping",
       "ListTitle": "work",
       "LocJudgements": [
          {
             "Known": "yes",
             "Locations": "public",
-            "PublicLocations": "officesupply"
+            "PublicLocations": "shop"
          },
          {
             "Known": "yes",
-            "Locations": "home,work,public",
-            "PublicLocations": "officesupply"
+            "Locations": "home,public",
+            "PublicLocations": "online, shop"
          },
          {
             "Known": "yes",
-            "Locations": "public",
-            "PublicLocations": "officesupply"
+            "Locations": "home",
+            "PublicLocations": "online"
          }
       ],
       "TimeJudgements": [
@@ -885,7 +885,7 @@
    },
    {
       "ID": "10207346",
-      "TaskTitle": "finish udemy course",
+      "TaskTitle": "finish spanish course",
       "ListTitle": "to do",
       "LocJudgements": [
          {

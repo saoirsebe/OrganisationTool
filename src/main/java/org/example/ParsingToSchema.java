@@ -47,7 +47,7 @@ public class ParsingToSchema {
 
 
         for (String taskDescription : taskDescriptions) {
-            CoreDocument doc = new CoreDocument(taskDescription);
+            CoreDocument doc = new CoreDocument("You " + taskDescription);
             pipeline.annotate(doc);  // Runs every annotator configured in pipeline. Doc is now made up of tokens, POS tags, lemmas, dependency trees, etc.
             CoreSentence sentence = doc.sentences().get(0);  // Grab sentence
             SemanticGraph deps = sentence.dependencyParse(); // Gets dependency tree for taskDescription
@@ -55,22 +55,20 @@ public class ParsingToSchema {
             IndexedWord root = deps.getFirstRoot();
             String action = root.lemma(); // The lemma of the root word should be the action
 
-            /*
-            if (!root.tag().startsWith("VB")) {
-                System.out.println(deps);
-                CoreDocument doc1 = new CoreDocument("You " + taskDescription);
+
+            if (root.lemma().equals("you")) {
+
+                CoreDocument doc1 = new CoreDocument(taskDescription);
                 pipeline.annotate(doc1);  // Runs every annotator configured in pipeline. Doc is now made up of tokens, POS tags, lemmas, dependency trees, etc.
                 CoreSentence sentence1 = doc1.sentences().get(0);  // Grab sentence
                 SemanticGraph deps1 = sentence1.dependencyParse(); // Gets dependency tree for taskDescription
 
                 IndexedWord root1 = deps1.getFirstRoot();
-                if (!Objects.equals(root1.lemma(), "you")){
-                    action = root1.lemma();
-                    root = root1;
-                }
+                action = root1.lemma();
+                root = root1;
+
             }
 
-             */
 
 
             // Collect objects of the action
@@ -93,7 +91,7 @@ public class ParsingToSchema {
             }
 
 
-            if (objHead == null || action.equals("tv") || action.equals("Nazgul") ||  action.equals("theatre")) {
+            if (action.equals("clothes") || action.equals("meet")) {
                 System.out.println(deps);
             }
 
