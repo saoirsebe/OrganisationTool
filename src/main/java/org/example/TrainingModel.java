@@ -12,7 +12,7 @@ import java.util.Properties;
 public class TrainingModel {
     /**
      * This class will train a model (using my synthetic dataset MS-LaTTE_synthetic) to predict the best time of day for the task and the duration of the task.
-     * It does this by calling classes TimeOfDayPredictor and TaskDurationPredictor
+     * It does this by calling classes ParsingToSchema, TimeOfDayPredictor and TaskDurationPredictor
      * @param args
      * @throws Exception
      */
