@@ -1,7 +1,7 @@
 [
    {
       "ID": "3026964",
-      "TaskTitle": "rearrange closet",
+      "TaskTitle": "clothes shopping",
       "ListTitle": "home",
       "LocJudgements": [
          {
@@ -261,7 +261,7 @@
    },
    {
       "ID": "12477687",
-      "TaskTitle": "paper hold",
+      "TaskTitle": "tailor red top",
       "ListTitle": "to do",
       "LocJudgements": [
          {
@@ -469,7 +469,7 @@
    },
    {
       "ID": "7245405",
-      "TaskTitle": "text nazgul",
+      "TaskTitle": "text Nazgul",
       "ListTitle": "default list",
       "LocJudgements": [
          {
@@ -625,7 +625,7 @@
    },
    {
       "ID": "11988740",
-      "TaskTitle": "girls shoes",
+      "TaskTitle": "buy girls shoes",
       "ListTitle": "trip list",
       "LocJudgements": [
          {
@@ -668,16 +668,16 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 25
+            "EstimatedMinutes": 60
          },
          {
-            "EstimatedMinutes": 10
+            "EstimatedMinutes": 90
          }
       ]
    },
    {
       "ID": "11366330",
-      "TaskTitle": "book",
+      "TaskTitle": "book theatre",
       "ListTitle": "dc trip",
       "LocJudgements": [
          {
@@ -833,7 +833,7 @@
    },
    {
       "ID": "7893170",
-      "TaskTitle": "roettger turkey",
+      "TaskTitle": "buy turkey",
       "ListTitle": "groceries",
       "LocJudgements": [
          {
@@ -871,7 +871,7 @@
          },
          {
             "Known": "yes",
-            "Times": "WE-evening"
+            "Times": "WE-afternoon"
          }
       ],
       "TimeTaken": [
@@ -879,7 +879,7 @@
             "EstimatedMinutes": 25
          },
          {
-            "EstimatedMinutes": 10
+            "EstimatedMinutes": 30
          }
       ]
    },
@@ -1041,7 +1041,7 @@
    },
    {
       "ID": "967206",
-      "TaskTitle": "office layout",
+      "TaskTitle": "fix office layout",
       "ListTitle": "default list",
       "LocJudgements": [
          {
@@ -1084,7 +1084,7 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 15
+            "EstimatedMinutes": 45
          },
          {
             "EstimatedMinutes": 30
@@ -1202,23 +1202,23 @@
    },
    {
       "ID": "11204171",
-      "TaskTitle": "office attire",
+      "TaskTitle": "buy office attire",
       "ListTitle": "default list",
       "LocJudgements": [
          {
             "Known": "yes",
             "Locations": "public",
-            "PublicLocations": "clothing"
+            "PublicLocations": "shops"
          },
          {
             "Known": "yes",
-            "Locations": "public",
-            "PublicLocations": "clothing"
+            "Locations": "online",
+            "PublicLocations": ""
          },
          {
             "Known": "yes",
-            "Locations": "public",
-            "PublicLocations": "clothing"
+            "Locations": "public, online",
+            "PublicLocations": "clothes shop"
          }
       ],
       "TimeJudgements": [
@@ -1245,16 +1245,19 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 10
+            "EstimatedMinutes": 60
          },
          {
-            "EstimatedMinutes": 30
+            "EstimatedMinutes": 90
+         },
+         {
+            "EstimatedMinutes": 75
          }
       ]
    },
    {
       "ID": "9766160",
-      "TaskTitle": "dining room windows",
+      "TaskTitle": "clean dining room windows",
       "ListTitle": "cleaning",
       "LocJudgements": [
          {
@@ -1284,7 +1287,7 @@
          },
          {
             "Known": "yes",
-            "Times": "WE-afternoon,WD-evening"
+            "Times": "WE-morning,WE-afternoon"
          },
          {
             "Known": "yes",
@@ -1297,7 +1300,7 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 10
+            "EstimatedMinutes": 20
          },
          {
             "EstimatedMinutes": 25
@@ -1306,18 +1309,18 @@
    },
    {
       "ID": "3206664",
-      "TaskTitle": "electronic recycle",
+      "TaskTitle": "recycle electronics",
       "ListTitle": "to do",
       "LocJudgements": [
          {
             "Known": "yes",
             "Locations": "public",
-            "PublicLocations": "electronics"
+            "PublicLocations": "landfill"
          },
          {
             "Known": "yes",
             "Locations": "public",
-            "PublicLocations": "electronics"
+            "PublicLocations": "shop"
          },
          {
             "Known": "yes",
@@ -1340,7 +1343,7 @@
          },
          {
             "Known": "yes",
-            "Times": "WD-afternoon,WD-evening"
+            "Times": "WE-morning,WD-afternoon"
          },
          {
             "Known": "yes",
@@ -1349,10 +1352,10 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 15
+            "EstimatedMinutes": 25
          },
          {
-            "EstimatedMinutes": 10
+            "EstimatedMinutes": 20
          }
       ]
    },
@@ -1410,7 +1413,7 @@
    },
    {
       "ID": "12702532",
-      "TaskTitle": "5x tshirts",
+      "TaskTitle": "pick 5x tshirts for trip",
       "ListTitle": "packing",
       "LocJudgements": [
          {
@@ -1826,7 +1829,7 @@
    },
    {
       "ID": "10596082",
-      "TaskTitle": "rafi cider vinegar",
+      "TaskTitle": "buy cider vinegar",
       "ListTitle": "groceries",
       "LocJudgements": [
          {
@@ -1872,7 +1875,7 @@
             "EstimatedMinutes": 20
          },
          {
-            "EstimatedMinutes": 15
+            "EstimatedMinutes": 25
          }
       ]
    },
@@ -1930,7 +1933,7 @@
    },
    {
       "ID": "10938916",
-      "TaskTitle": "new barclaycard",
+      "TaskTitle": "get new barclaycard",
       "ListTitle": "to do",
       "LocJudgements": [
          {
@@ -1982,7 +1985,7 @@
    },
    {
       "ID": "11788806",
-      "TaskTitle": "photo ledge",
+      "TaskTitle": "take good photo of garden",
       "ListTitle": "to do",
       "LocJudgements": [
          {
@@ -3334,7 +3337,7 @@
    },
    {
       "ID": "10857814",
-      "TaskTitle": "basant salt",
+      "TaskTitle": "get basant salt",
       "ListTitle": "groceries",
       "LocJudgements": [
          {
@@ -330678,7 +330681,7 @@
    },
    {
       "ID": "7145628",
-      "TaskTitle": "caddyshack",
+      "TaskTitle": "watch caddyshack",
       "ListTitle": "watch",
       "LocJudgements": [
          {
@@ -330721,10 +330724,10 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 30
+            "EstimatedMinutes": 60
          },
          {
-            "EstimatedMinutes": 20
+            "EstimatedMinutes": 70
          }
       ]
    },
@@ -330834,7 +330837,7 @@
    },
    {
       "ID": "12158988",
-      "TaskTitle": "sparklines",
+      "TaskTitle": "fix sink",
       "ListTitle": "default list",
       "LocJudgements": [
          {
@@ -330844,7 +330847,7 @@
          },
          {
             "Known": "yes",
-            "Locations": "work",
+            "Locations": "home",
             "PublicLocations": ""
          },
          {
@@ -330877,10 +330880,10 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 10
+            "EstimatedMinutes": 35
          },
          {
-            "EstimatedMinutes": 25
+            "EstimatedMinutes": 40
          }
       ]
    },
@@ -330990,7 +330993,7 @@
    },
    {
       "ID": "12786807",
-      "TaskTitle": "launder guest room sheets",
+      "TaskTitle": "wash guest room sheets",
       "ListTitle": "to do",
       "LocJudgements": [
          {
@@ -331146,7 +331149,7 @@
    },
    {
       "ID": "11101819",
-      "TaskTitle": "patmon crackers",
+      "TaskTitle": "go to the gym",
       "ListTitle": "groceries",
       "LocJudgements": [
          {
@@ -331189,10 +331192,10 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 30
+            "EstimatedMinutes": 60
          },
          {
-            "EstimatedMinutes": 15
+            "EstimatedMinutes": 90
          }
       ]
    },

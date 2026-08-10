@@ -9,40 +9,19 @@ import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * This class is used to parse the task description.
  */
 public class ParsingToSchema {
 
-    /**
-     *
-     * @param deps Dependency tree
-     * @param head The word we want the children of
-     * @return
-     */
-    private String getFullPhrase(SemanticGraph deps, IndexedWord head) {
-        List<IndexedWord> subtree = new ArrayList<>(deps.descendants(head));
-        subtree.sort((a, b) -> Integer.compare(a.index(), b.index()));
-
-        StringBuilder sb = new StringBuilder();
-        for (IndexedWord w : subtree) {
-            String pos = w.get(PartOfSpeechAnnotation.class); // or w.tag()
-            if (isContentWord(pos)) {
-                sb.append(w.word()).append(" ");
-            }
-        }
-        return sb.toString().trim();
-    }
 
     private boolean isContentWord(String pos) {
         // Keep nouns, proper nouns, adjectives
         return pos.startsWith("NN") || pos.startsWith("JJ");
     }
+
 
 
     /**
@@ -67,26 +46,42 @@ public class ParsingToSchema {
 
 
         for (String taskDescription : taskDescriptions) {
-            CoreDocument doc = new CoreDocument(taskDescription);
+            CoreDocument doc = new CoreDocument("You " + taskDescription);
             pipeline.annotate(doc);  // Runs every annotator configured in pipeline. Doc is now made up of tokens, POS tags, lemmas, dependency trees, etc.
             CoreSentence sentence = doc.sentences().get(0);  // Grab sentence
             SemanticGraph deps = sentence.dependencyParse(); // Gets dependency tree for taskDescription
 
             IndexedWord root = deps.getFirstRoot();
+
+
             String action = root.lemma(); // The lemma of the root word should be the action
-            // Handle particle verbs (e.g. "turn off" -> "turn off" instead of just "turn")
-            for (SemanticGraphEdge edge : deps.outgoingEdgeList(root)) {
-                String rel = edge.getRelation().toString();
-                if (rel.equals("compound:prt")) {
-                    action = action + " " + edge.getDependent().word();
-                }
+            if (Objects.equals(action, "you")) {
+                System.out.println(deps);
+                CoreDocument doc1 = new CoreDocument(taskDescription);
+                pipeline.annotate(doc1);  // Runs every annotator configured in pipeline. Doc is now made up of tokens, POS tags, lemmas, dependency trees, etc.
+                CoreSentence sentence1 = doc1.sentences().get(0);  // Grab sentence
+                SemanticGraph deps1 = sentence1.dependencyParse(); // Gets dependency tree for taskDescription
+
+                IndexedWord root1 = deps1.getFirstRoot();
+                action = root1.lemma();
             }
+
 
             // Collect objects of the action
             List<String> objects = new ArrayList<>();
+
             for (SemanticGraphEdge edge : deps.outgoingEdgeList(root)) {
-                IndexedWord dep = edge.getDependent();
-                objects.add(dep.lemma()); //Add each dependent of the action to objects list
+                String relation = edge.getRelation().getShortName();
+
+                if (relation.equals("obj") || relation.equals("obl") || relation.equals("dobj")) {
+                    // Only add real target nouns
+                    IndexedWord child = edge.getTarget();
+                    objects.add(child.lemma()); //Add each noun dependent of the action to objects list
+                }
+                else if (relation.equals("compound:prt")) {
+                    // Handle particle verbs (e.g. "turn off" -> "turn off" instead of just "turn")
+                    action = action + " " + edge.getDependent().word();
+                }
             }
 
             ParsedTaskDescription parsedTask = new ParsedTaskDescription(action, objects, null, taskDescription);
