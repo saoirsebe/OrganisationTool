@@ -1,16 +1,21 @@
 package org.example;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import java.time.*;
-import java.time.temporal.*;
-import java.util.UUID;
 
 import java.io.File;
-import java.io.IOException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Properties;
 
-public class ParsingMSLaTTE {
+
+public class TrainingModel {
+    /**
+     * This class will train a model (using my synthetic dataset MS-LaTTE_synthetic) to predict the best time of day for the task and the duration of the task.
+     * It does this by calling classes TimeOfDayPredictor and TaskDurationPredictor
+     * @param args
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
