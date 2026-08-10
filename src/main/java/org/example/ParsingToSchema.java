@@ -48,10 +48,10 @@ public class ParsingToSchema {
     /**
      * This method is used to parse the task description.
      * @param taskDescriptions
-     * @return List of [action, target, target_type, raw]
+     * @return List of ParsedCommand [action, target, target_type, raw]
      */
-    public List<ParsedCommand> returnParsedTasks(List<String> taskDescriptions){
-        List<ParsedCommand> parsedTasks = new ArrayList<>();
+    public List<ParsedTaskDescription> returnParsedTasks(List<String> taskDescriptions){
+        List<ParsedTaskDescription> parsedTasks = new ArrayList<>();
 
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize, ssplit, pos, lemma, depparse, ner");
@@ -89,7 +89,7 @@ public class ParsingToSchema {
                 objects.add(dep.lemma()); //Add each dependent of the action to objects list
             }
 
-            ParsedCommand parsedTask = new ParsedCommand(action, objects, null, taskDescription);
+            ParsedTaskDescription parsedTask = new ParsedTaskDescription(action, objects, null, taskDescription);
             parsedTasks.add(parsedTask);
         }
 
