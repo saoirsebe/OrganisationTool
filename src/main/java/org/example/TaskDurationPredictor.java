@@ -2,12 +2,14 @@ package org.example;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.layers.EmbeddingLayer;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.MultiDataSet;
 import org.nd4j.linalg.factory.Nd4j;
 
 import java.io.File;
@@ -29,8 +31,15 @@ import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 import org.deeplearning4j.nn.transferlearning.TransferLearning;
 import org.deeplearning4j.nn.transferlearning.FineTuneConfiguration;
+import org.deeplearning4j.nn.conf.graph.MergeVertex;
 
 public class TaskDurationPredictor {
+
+    // Turn all words in yourVocabularySet into an integer ID
+    Map<String, Integer> actionToIndex = new HashMap<>();
+    Map<String, Integer> targetToIndex = new HashMap<>();
+    Map<Integer, String> indexToAction = new HashMap<>();
+    Map<Integer, String> indexToTarget = new HashMap<>();
 
     public void embeddingLayerSetup() throws IOException {
 
@@ -44,14 +53,8 @@ public class TaskDurationPredictor {
                 .flatMap(task -> task.targets.stream())
                 .collect(Collectors.toSet());
 
-        // Turn all words in yourVocabularySet into an integer ID
-        Map<String, Integer> actionToIndex = new HashMap<>();
-        Map<String, Integer> targetToIndex = new HashMap<>();
-        Map<Integer, String> indextoAction = new HashMap<>();
-        Map<Integer, String> indexToTarget = new HashMap<>();
 
-
-        // UNK token to handle words not in pretrained sets at inference time:
+        // UNK tokens to handle words not in pretrained sets at inference time:
         int aIdx = 0;
         for (String action : distinctActions) {
             actionToIndex.put(action, aIdx++);
@@ -98,7 +101,6 @@ public class TaskDurationPredictor {
                 targetWeightMatrix.putRow(rowIdx, Nd4j.rand(1, embeddingDim).subi(0.5).muli(0.1));
             }
         }
-
 
 
         ComputationGraphConfiguration conf = new NeuralNetConfiguration.Builder()
@@ -164,8 +166,46 @@ public class TaskDurationPredictor {
     void trainModel(ComputationGraph model) throws IOException {
         int numEpochs = 100;
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
+        List<MultiDataSet> multiDataSetsForTestTasks = getMultiDataSetsForTestTasks(parsedTasksList);
 
 
+    }
+
+    List<MultiDataSet> getMultiDataSetsForTestTasks(List<ParsedTaskDescription> parsedTasksList){
+
+        List<Integer> listOfActions = parsedTasksList.stream()
+                .map(task-> actionToIndex.getOrDefault(task.action, actionToIndex.get("<UNK>")))
+                .toList();
+
+        List<List<Integer>> listOfTargets = parsedTasksList.stream()
+                .map(task -> task.targets.stream()
+                        .map(target -> targetToIndex.getOrDefault(target, targetToIndex.get("<UNK>")))
+                        .toList())
+                .toList();
+
+        List<List<Integer>> listOfDurations = parsedTasksList.stream()
+                .map(task -> task.targets); // CHANGE TO ACTUAL TIMES TAKEN!!!
+
+
+        List<INDArray> actionInputArrays = listOfActions.stream()
+                .map(actionIdx -> Nd4j.create(new float[]{actionIdx}, new int[]{1, 1}))
+                .toList();
+
+        List<List<INDArray>> targetInputArrays = listOfTargets.stream()
+                .map(targetsIdxList -> targetsIdxList.stream()
+                        .map(targetIdx -> Nd4j.create(new float[]{targetIdx}, new int[]{1, 1}))
+                        .toList())
+                .toList();
+
+
+        List<MultiDataSet> listOfMultiDataSets = ;
+
+        INDArray labelArr = Nd4j.create(new float[]{durationMinutes}, new int[]{1, 1});
+
+        MultiDataSet mds = new org.nd4j.linalg.dataset.MultiDataSet(
+                new INDArray[]{actionInputArr, targetInputArr},
+                new INDArray[]{labelArr}
+        );
     }
 
     /**

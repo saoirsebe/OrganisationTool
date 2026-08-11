@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-class TaskDurationPredictorTest {
+class taskDurationPredictorTest {
 
     @Test
     void embeddingLayerSetupTest() throws IOException {
