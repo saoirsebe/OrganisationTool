@@ -17,20 +17,12 @@ import java.util.*;
  */
 public class ParsingToSchema {
 
-
-    private boolean isContentWord(String pos) {
-        // Keep nouns, proper nouns, adjectives
-        return pos.startsWith("NN") || pos.startsWith("JJ");
-    }
-
-
-
     /**
      * This method is used to parse the task description.
      * @param taskDescriptions
      * @return List of ParsedCommand [action, target, target_type, raw]
      */
-    public List<ParsedTaskDescription> returnParsedTasks(List<String> taskDescriptions){
+    public static List<ParsedTaskDescription> returnParsedTasks(List<String> taskDescriptions){
         List<ParsedTaskDescription> parsedTasks = new ArrayList<>();
 
         Properties props = new Properties();
@@ -89,12 +81,6 @@ public class ParsingToSchema {
                     action = action + " " + edge.getDependent().word();
                 }
             }
-
-
-            if (action.equals("clothes") || action.equals("meet")) {
-                System.out.println(deps);
-            }
-
 
 
             ParsedTaskDescription parsedTask = new ParsedTaskDescription(action, objects, null, taskDescription);
