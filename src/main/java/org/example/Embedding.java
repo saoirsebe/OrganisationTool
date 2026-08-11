@@ -28,6 +28,9 @@ import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
+
 
 public class Embedding {
 
@@ -71,6 +74,25 @@ public class Embedding {
         wordToIndex.put("<UNK>", vocabSize);
         indexToWord.put(vocabSize, "<UNK>");
         vocabSize++;
+
+        // Creating weight matrix to initialise embedding model to weights of pretrained WordVectors
+        WordVectors wordVectors = WordVectorSerializer.loadTxtVectors(new File("glove.6B.100d.txt"));
+        int embeddingDim = 100; // to match glove.6B.100d.txt -> 100
+        INDArray pretrainedWeightMatrix = Nd4j.zeros(vocabSize, embeddingDim); // Initialise weight matrix to 0's
+        for (Map.Entry<String, Integer> entry : wordToIndex.entrySet()) {
+            String word = entry.getKey();
+            int rowIdx = entry.getValue();
+
+            if (wordVectors.hasWord(word)) {
+                double[] vec = wordVectors.getWordVector(word);
+                INDArray vecArray = Nd4j.create(vec); // shape [embeddingDim]
+                pretrainedWeightMatrix.putRow(rowIdx, vecArray);
+            } else {
+                // if not in the pretrained set: init to random small value as zeros give the model nothing to work with and can cause dead gradients
+                INDArray randomVec = Nd4j.rand(1, embeddingDim).subi(0.5).muli(0.1);
+                pretrainedWeightMatrix.putRow(rowIdx, randomVec);
+            }
+        }
 
 
     }
