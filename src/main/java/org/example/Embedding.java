@@ -18,12 +18,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
-import org.deeplearning4j.nn.conf.layers.EmbeddingLayer;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
@@ -34,8 +30,7 @@ import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 
 public class Embedding {
 
-
-    public void embeddingLayerSetup(String plainWord) throws IOException {
+    public void embeddingLayerSetup() throws IOException {
         int idx = 0;
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
@@ -76,7 +71,7 @@ public class Embedding {
         vocabSize++;
 
         // Creating weight matrix to initialise embedding model to weights of pretrained WordVectors
-        WordVectors wordVectors = WordVectorSerializer.loadTxtVectors(new File("glove.6B.100d.txt"));
+        WordVectors wordVectors = WordVectorSerializer.loadTxtVectors(new File("src/main/resources/glove.6B.100d.txt"));
         int embeddingDim = 100; // to match glove.6B.100d.txt -> 100
         INDArray pretrainedWeightMatrix = Nd4j.zeros(vocabSize, embeddingDim); // Initialise weight matrix to 0's
         for (Map.Entry<String, Integer> entry : wordToIndex.entrySet()) {
@@ -94,6 +89,32 @@ public class Embedding {
             }
         }
 
+        MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                .updater(new Adam(0.001))
+                .list()
+                .layer(new EmbeddingLayer.Builder()
+                        .nIn(vocabSize)
+                        .nOut(embeddingDim)
+                        .weightInit(WeightInit.ZERO) // overwritten in step 4 — placeholder only
+                        .build())
+                .layer(new DenseLayer.Builder()
+                        .nIn(embeddingDim)
+                        .nOut(64)
+                        .activation(Activation.RELU)
+                        .build())
+                .layer(new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .activation(Activation.IDENTITY)
+                        .nIn(64)
+                        .nOut(1) // predicting a single value: duration in minutes
+                        .build())
+                .build();
 
+        MultiLayerNetwork model = new MultiLayerNetwork(conf);
+        model.init();
+
+        INDArray currentEmbeddingWeights = model.getLayer(0).getParam("W");
+        System.out.println(currentEmbeddingWeights.shapeInfoToString());
+        System.out.println(pretrainedWeightMatrix.shapeInfoToString());
+        //model.getLayer(0).setParam("W", pretrainedWeightMatrix);
     }
 }
