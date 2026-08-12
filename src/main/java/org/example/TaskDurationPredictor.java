@@ -206,13 +206,10 @@ public class TaskDurationPredictor {
 
     List<MultiDataSet> getMultiDataSetsForTestTasks() throws IOException {
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
-
-
         List<List<Integer>> allDurationTimes = getDurationTimes();
 
-
         //Turn words into their integer representation using ______ToIndex
-        List<Integer> listOfActions = parsedTasksList.stream()
+        List<Integer> listOfActionInts = parsedTasksList.stream()
                 .map(task-> actionToIndex.getOrDefault(task.action, actionToIndex.get("<UNK>")))
                 .toList();
 
@@ -223,22 +220,41 @@ public class TaskDurationPredictor {
                 .toList();
 
 
+        // build mask and pad each example to same number of action,target pairs
+        int maxPairs = listOfTargets.stream().mapToInt(List::size).max().orElse(1); // Finds the highest number of targets (action,target pairs needed)
+        int numExamples = parsedTasksList.size();
+        int trainingExamples = numExamples * 2;
+
+        if (listOfTargets.size() != numExamples){
+            throw new IOException("list of targets size != numExamples");
+        }
+
+        INDArray actionSeq = Nd4j.zeros(trainingExamples, maxPairs); // action mask initialised to 0's
+        INDArray targetSeq = Nd4j.zeros(trainingExamples, maxPairs);
+        INDArray mask = Nd4j.zeros(trainingExamples, maxPairs); // 1 = real pair, 0 = padding
+        INDArray labels = Nd4j.zeros(trainingExamples, 1);
+
         // Turn all integers into INDArray for inputting into model
-        List<INDArray> actionInputArrays = listOfActions.stream()
-                .map(actionIdx -> Nd4j.create(new float[]{actionIdx}, new int[]{1, 1}))
-                .toList();
+        for (int i = 0; i < numExamples; i++) {
+            List<Integer> TargetsList = listOfTargets.get(i);
+            for (int j = 0; j < TargetsList.size(); j++) {
+                actionSeq.putScalar(new int[]{i, j}, listOfActionInts.get(i));
+                targetSeq.putScalar(new int[]{i, j}, TargetsList.get(j));
+                mask.putScalar(new int[]{i, j}, 1.0);
+            }
+            labels.putScalar(new int[]{i, 0}, allDurationTimes.get(i).get(0));
 
-        List<List<INDArray>> targetInputArrays = listOfTargets.stream()
-                .map(targetsIdxList -> targetsIdxList.stream()
-                        .map(targetIdx -> Nd4j.create(new float[]{targetIdx}, new int[]{1, 1}))
-                        .toList())
-                .toList();
+            for (int j = 0; j < TargetsList.size(); j++) {
+                actionSeq.putScalar(new int[]{i+numExamples, j}, listOfActionInts.get(i));
+                targetSeq.putScalar(new int[]{i+numExamples, j}, TargetsList.get(j));
+                mask.putScalar(new int[]{i+numExamples, j}, 1.0);
+            }
+            labels.putScalar(new int[]{i+numExamples, 0}, allDurationTimes.get(i).get(1));
+        }
 
-        List<List<INDArray>> labelArrays = allDurationTimes.stream()
-                .map(durationTimesList -> durationTimesList.stream()
-                        .map(time -> Nd4j.create(new float[]{time.floatValue()}, new int[]{1, 1}))
-                        .toList())
-                .toList();
+
+
+
 
         /*
         List<MultiDataSet> listOfMultiDataSets = ;
