@@ -3,8 +3,8 @@ package org.example;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
+import org.deeplearning4j.nn.conf.layers.BatchNormalization;
 import org.deeplearning4j.nn.conf.layers.EmbeddingLayer;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
@@ -19,11 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
@@ -36,10 +34,14 @@ import org.deeplearning4j.nn.conf.graph.MergeVertex;
 public class TaskDurationPredictor {
 
     // Turn all words in yourVocabularySet into an integer ID
-    Map<String, Integer> actionToIndex = new HashMap<>();
-    Map<String, Integer> targetToIndex = new HashMap<>();
-    Map<Integer, String> indexToAction = new HashMap<>();
-    Map<Integer, String> indexToTarget = new HashMap<>();
+    Map<String, Integer> actionToIndex;
+    Map<String, Integer> targetToIndex;
+    Map<Integer, String> indexToAction;
+    Map<Integer, String> indexToTarget;
+
+    double mean; // mean duration across training set
+    double std;  // std dev of duration across training set
+
 
     public void embeddingLayerSetup() throws IOException {
 
@@ -53,6 +55,11 @@ public class TaskDurationPredictor {
                 .flatMap(task -> task.targets.stream())
                 .collect(Collectors.toSet());
 
+
+        actionToIndex = new HashMap<>();
+        targetToIndex = new HashMap<>();
+        indexToAction = new HashMap<>();
+        indexToTarget = new HashMap<>();
 
         // UNK tokens to handle words not in pretrained sets at inference time:
         int aIdx = 0;
@@ -116,6 +123,8 @@ public class TaskDurationPredictor {
                                 .weightInit(WeightInit.ZERO) // placeholder, overwritten later
                                 .build(),
                         "actionInput")
+                .addLayer("actionNorm", new BatchNormalization.Builder().build(), "actionEmbedding")
+
 
                 // embedding branch for target
                 .addLayer("targetEmbedding",
@@ -125,9 +134,11 @@ public class TaskDurationPredictor {
                                 .weightInit(WeightInit.ZERO) // placeholder, overwritten later
                                 .build(),
                         "targetInput")
+                .addLayer("targetNorm", new BatchNormalization.Builder().build(), "targetEmbedding")
+
 
                 // merge the two embedding outputs into one vector
-                .addVertex("merge", new MergeVertex(), "actionEmbedding", "targetEmbedding")
+                .addVertex("merge", new MergeVertex(), "actionNorm", "targetNorm")
 
                 .addLayer("dense1",
                         new DenseLayer.Builder()
@@ -163,16 +174,57 @@ public class TaskDurationPredictor {
         trainModel(model);
     }
 
+    List<List<Integer>> getDurationTimes() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        List<Task> tasks = mapper.readValue(
+                new File("src/main/resources/MS-LaTTE_synthetic.json"),
+                mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
+        );
+
+
+        return tasks.stream()
+                .flatMap(task -> task.TimeTaken.stream())
+                .map(timeTaken -> timeTaken.EstimatedMinutes)
+                .toList();
+    }
+
     void trainModel(ComputationGraph model) throws IOException {
         int numEpochs = 100;
-        List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
-        List<MultiDataSet> multiDataSetsForTestTasks = getMultiDataSetsForTestTasks(parsedTasksList);
+        List<MultiDataSet> multiDataSetsForTestTasks = getMultiDataSetsForTestTasks();
 
 
     }
 
-    List<MultiDataSet> getMultiDataSetsForTestTasks(List<ParsedTaskDescription> parsedTasksList){
+    List<MultiDataSet> getMultiDataSetsForTestTasks() throws IOException {
+        List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
 
+        // Normalise times
+        List<List<Integer>> allDurationTimes = getDurationTimes();
+        List<Integer> values = allDurationTimes.stream()
+                .flatMap(List::stream)
+                .toList();
+
+        mean = values.stream()
+                .mapToInt(Integer::intValue)
+                .average()
+                .orElse(0.0);
+
+        std = Math.sqrt(
+                values.stream()
+                        .mapToDouble(x -> Math.pow(x - mean, 2))
+                        .average()
+                        .orElse(0.0)
+        );
+        List<List<Double>> normalisedLables = allDurationTimes.stream()
+                .map(durationTimesList -> durationTimesList.stream()
+                        .map(time -> ((time - mean) / std))
+                        .toList())
+                .toList();
+
+
+
+        //Turn words into their integer representation using ______ToIndex
         List<Integer> listOfActions = parsedTasksList.stream()
                 .map(task-> actionToIndex.getOrDefault(task.action, actionToIndex.get("<UNK>")))
                 .toList();
@@ -183,10 +235,8 @@ public class TaskDurationPredictor {
                         .toList())
                 .toList();
 
-        List<List<Integer>> listOfDurations = parsedTasksList.stream()
-                .map(task -> task.targets); // CHANGE TO ACTUAL TIMES TAKEN!!!
 
-
+        // Turn all integers into INDArray for inputting into model
         List<INDArray> actionInputArrays = listOfActions.stream()
                 .map(actionIdx -> Nd4j.create(new float[]{actionIdx}, new int[]{1, 1}))
                 .toList();
@@ -197,10 +247,15 @@ public class TaskDurationPredictor {
                         .toList())
                 .toList();
 
+        List<List<INDArray>> labelArrays = normalisedLables.stream()
+                .map(durationTimesList -> durationTimesList.stream()
+                        .map(time -> Nd4j.create(new float[]{time.floatValue()}, new int[]{1, 1}))
+                        .toList())
+                .toList();
+
 
         List<MultiDataSet> listOfMultiDataSets = ;
 
-        INDArray labelArr = Nd4j.create(new float[]{durationMinutes}, new int[]{1, 1});
 
         MultiDataSet mds = new org.nd4j.linalg.dataset.MultiDataSet(
                 new INDArray[]{actionInputArr, targetInputArr},
