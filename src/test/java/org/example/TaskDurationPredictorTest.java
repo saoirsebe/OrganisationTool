@@ -9,6 +9,6 @@ class taskDurationPredictorTest {
     @Test
     void embeddingLayerSetupTest() throws IOException {
         TaskDurationPredictor taskDurationPredictor = new TaskDurationPredictor();
-        taskDurationPredictor.embeddingLayerSetup();
+        taskDurationPredictor.modelSetup();
     }
 }

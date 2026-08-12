@@ -31,6 +31,9 @@ import org.deeplearning4j.nn.transferlearning.TransferLearning;
 import org.deeplearning4j.nn.transferlearning.FineTuneConfiguration;
 import org.deeplearning4j.nn.conf.graph.MergeVertex;
 
+import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
+import org.nd4j.linalg.dataset.api.iterator.MultiDataSetIterator;
+
 public class TaskDurationPredictor {
 
     // Turn all words in yourVocabularySet into an integer ID
@@ -39,78 +42,13 @@ public class TaskDurationPredictor {
     Map<Integer, String> indexToAction;
     Map<Integer, String> indexToTarget;
 
+    // Used during training to normalise:
     double mean; // mean duration across training set
     double std;  // std dev of duration across training set
 
 
-    public void embeddingLayerSetup() throws IOException {
-
-        List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
-
-        // Create a set of all distinct action and target words in dataset
-        Set<String> distinctActions = parsedTasksList.stream()
-                .map(task -> task.action)
-                .collect(Collectors.toSet());
-        Set<String> distinctTargets = parsedTasksList.stream()
-                .flatMap(task -> task.targets.stream())
-                .collect(Collectors.toSet());
-
-
-        actionToIndex = new HashMap<>();
-        targetToIndex = new HashMap<>();
-        indexToAction = new HashMap<>();
-        indexToTarget = new HashMap<>();
-
-        // UNK tokens to handle words not in pretrained sets at inference time:
-        int aIdx = 0;
-        for (String action : distinctActions) {
-            actionToIndex.put(action, aIdx++);
-        }
-        actionToIndex.put("<UNK>", aIdx++);
-        int actionVocabSize = actionToIndex.size();
-
-        int tIdx = 0;
-        for (String target : distinctTargets) {
-            targetToIndex.put(target, tIdx++);
-        }
-        targetToIndex.put("<UNK>", tIdx++);
-        int targetVocabSize = targetToIndex.size();
-
-
-
-        // Creating weight matrices to initialise embedding model to weights of pretrained WordVectors
-        WordVectors wordVectors = WordVectorSerializer.loadTxtVectors(new File("src/main/resources/glove.6B.100d.txt"));
-        int embeddingDim = 100; // to match glove.6B.100d.txt -> 100
-
-        INDArray actionWeightMatrix = Nd4j.zeros(actionVocabSize, embeddingDim);
-        for (Map.Entry<String, Integer> entry : actionToIndex.entrySet()) {
-            String word = entry.getKey();
-            int rowIdx = entry.getValue();
-            if (wordVectors.hasWord(word)) {
-                double[] vec = wordVectors.getWordVector(word);
-                INDArray vecArray = Nd4j.create(vec); // shape [embeddingDim]
-                actionWeightMatrix.putRow(rowIdx, vecArray);
-            } else {
-                actionWeightMatrix.putRow(rowIdx, Nd4j.rand(1, embeddingDim).subi(0.5).muli(0.1));
-            }
-        }
-
-        INDArray targetWeightMatrix = Nd4j.zeros(targetVocabSize, embeddingDim);
-        for (Map.Entry<String, Integer> entry : targetToIndex.entrySet()) {
-            String word = entry.getKey();
-            int rowIdx = entry.getValue();
-            if (wordVectors.hasWord(word)) {
-                double[] vec = wordVectors.getWordVector(word);
-                INDArray vecArray = Nd4j.create(vec); // shape [embeddingDim]
-                targetWeightMatrix.putRow(rowIdx, vecArray);
-            } else {
-                // if not in the pretrained set: init to random small value as zeros give the model nothing to work with and can cause dead gradients
-                targetWeightMatrix.putRow(rowIdx, Nd4j.rand(1, embeddingDim).subi(0.5).muli(0.1));
-            }
-        }
-
-
-        ComputationGraphConfiguration conf = new NeuralNetConfiguration.Builder()
+    ComputationGraphConfiguration modelConfig(int actionVocabSize, int targetVocabSize, int embeddingDim){
+        return new NeuralNetConfiguration.Builder()
                 .updater(new Adam(0.001))
                 .graphBuilder()
                 .addInputs("actionInput", "targetInput")
@@ -158,6 +96,75 @@ public class TaskDurationPredictor {
 
                 .setOutputs("output")
                 .build();
+    }
+
+    public void modelSetup() throws IOException {
+
+        List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
+
+        // Create a set of all distinct action and target words in dataset
+        Set<String> distinctActions = parsedTasksList.stream()
+                .map(task -> task.action)
+                .collect(Collectors.toSet());
+        Set<String> distinctTargets = parsedTasksList.stream()
+                .flatMap(task -> task.targets.stream())
+                .collect(Collectors.toSet());
+
+
+        actionToIndex = new HashMap<>();
+        targetToIndex = new HashMap<>();
+        indexToAction = new HashMap<>();
+        indexToTarget = new HashMap<>();
+
+        // UNK tokens to handle words not in pretrained sets at inference time:
+        int aIdx = 0;
+        for (String action : distinctActions) {
+            actionToIndex.put(action, aIdx++);
+        }
+        actionToIndex.put("<UNK>", aIdx++);
+        int actionVocabSize = actionToIndex.size();
+
+        int tIdx = 0;
+        for (String target : distinctTargets) {
+            targetToIndex.put(target, tIdx++);
+        }
+        targetToIndex.put("<UNK>", tIdx++);
+        int targetVocabSize = targetToIndex.size();
+
+
+        // Creating weight matrices to initialise embedding model to weights of pretrained WordVectors
+        WordVectors wordVectors = WordVectorSerializer.loadTxtVectors(new File("src/main/resources/glove.6B.100d.txt"));
+        int embeddingDim = 100; // to match glove.6B.100d.txt -> 100
+
+        INDArray actionWeightMatrix = Nd4j.zeros(actionVocabSize, embeddingDim);
+        for (Map.Entry<String, Integer> entry : actionToIndex.entrySet()) {
+            String word = entry.getKey();
+            int rowIdx = entry.getValue();
+            if (wordVectors.hasWord(word)) {
+                double[] vec = wordVectors.getWordVector(word);
+                INDArray vecArray = Nd4j.create(vec); // shape [embeddingDim]
+                actionWeightMatrix.putRow(rowIdx, vecArray);
+            } else {
+                actionWeightMatrix.putRow(rowIdx, Nd4j.rand(1, embeddingDim).subi(0.5).muli(0.1));
+            }
+        }
+
+        INDArray targetWeightMatrix = Nd4j.zeros(targetVocabSize, embeddingDim);
+        for (Map.Entry<String, Integer> entry : targetToIndex.entrySet()) {
+            String word = entry.getKey();
+            int rowIdx = entry.getValue();
+            if (wordVectors.hasWord(word)) {
+                double[] vec = wordVectors.getWordVector(word);
+                INDArray vecArray = Nd4j.create(vec); // shape [embeddingDim]
+                targetWeightMatrix.putRow(rowIdx, vecArray);
+            } else {
+                // if not in the pretrained set: init to random small value as zeros give the model nothing to work with and can cause dead gradients
+                targetWeightMatrix.putRow(rowIdx, Nd4j.rand(1, embeddingDim).subi(0.5).muli(0.1));
+            }
+        }
+
+
+        ComputationGraphConfiguration conf = modelConfig(actionVocabSize, targetVocabSize,embeddingDim);
 
         ComputationGraph model = new ComputationGraph(conf);
         model.init();
@@ -190,38 +197,18 @@ public class TaskDurationPredictor {
     }
 
     void trainModel(ComputationGraph model) throws IOException {
+
         int numEpochs = 100;
         List<MultiDataSet> multiDataSetsForTestTasks = getMultiDataSetsForTestTasks();
 
-
+        //predicted = model.output(...) * std + mean
     }
 
     List<MultiDataSet> getMultiDataSetsForTestTasks() throws IOException {
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
 
-        // Normalise times
+
         List<List<Integer>> allDurationTimes = getDurationTimes();
-        List<Integer> values = allDurationTimes.stream()
-                .flatMap(List::stream)
-                .toList();
-
-        mean = values.stream()
-                .mapToInt(Integer::intValue)
-                .average()
-                .orElse(0.0);
-
-        std = Math.sqrt(
-                values.stream()
-                        .mapToDouble(x -> Math.pow(x - mean, 2))
-                        .average()
-                        .orElse(0.0)
-        );
-        List<List<Double>> normalisedLables = allDurationTimes.stream()
-                .map(durationTimesList -> durationTimesList.stream()
-                        .map(time -> ((time - mean) / std))
-                        .toList())
-                .toList();
-
 
 
         //Turn words into their integer representation using ______ToIndex
@@ -247,13 +234,13 @@ public class TaskDurationPredictor {
                         .toList())
                 .toList();
 
-        List<List<INDArray>> labelArrays = normalisedLables.stream()
+        List<List<INDArray>> labelArrays = allDurationTimes.stream()
                 .map(durationTimesList -> durationTimesList.stream()
                         .map(time -> Nd4j.create(new float[]{time.floatValue()}, new int[]{1, 1}))
                         .toList())
                 .toList();
 
-
+        /*
         List<MultiDataSet> listOfMultiDataSets = ;
 
 
@@ -261,6 +248,9 @@ public class TaskDurationPredictor {
                 new INDArray[]{actionInputArr, targetInputArr},
                 new INDArray[]{labelArr}
         );
+
+         */
+        return null;
     }
 
     /**

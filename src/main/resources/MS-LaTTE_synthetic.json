@@ -469,7 +469,7 @@
    },
    {
       "ID": "7245405",
-      "TaskTitle": "text Nazgul",
+      "TaskTitle": "text Nazgul and Ella",
       "ListTitle": "default list",
       "LocJudgements": [
          {
@@ -512,10 +512,10 @@
       ],
       "TimeTaken": [
          {
-            "EstimatedMinutes": 5
+            "EstimatedMinutes": 10
          },
          {
-            "EstimatedMinutes": 10
+            "EstimatedMinutes": 20
          }
       ]
    },
@@ -1771,7 +1771,7 @@
             "EstimatedMinutes": 5
          },
          {
-            "EstimatedMinutes": 5
+            "EstimatedMinutes": 10
          }
       ]
    },
