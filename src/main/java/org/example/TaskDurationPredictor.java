@@ -40,6 +40,7 @@ public class TaskDurationPredictor {
     private Map<String, Integer> targetToIndex;
     private Map<Integer, String> indexToAction;
     private Map<Integer, String> indexToTarget;
+    private ComputationGraph timePredictionModel;
 
 
     ComputationGraphConfiguration modelConfig(int actionVocabSize, int targetVocabSize, int embeddingDim){
@@ -108,6 +109,10 @@ public class TaskDurationPredictor {
                 .build();
     }
 
+    /**
+     * Method called to create the time prediction model, must be called first before training and use
+     * @throws IOException
+     */
     public void modelSetup() throws IOException {
 
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
@@ -181,19 +186,17 @@ public class TaskDurationPredictor {
 
         ComputationGraphConfiguration conf = modelConfig(actionVocabSize, targetVocabSize,embeddingDim);
 
-        ComputationGraph model = new ComputationGraph(conf);
-        model.init();
+        ComputationGraph initialModel = new ComputationGraph(conf);
+        initialModel.init();
 
-        model.getLayer("actionEmbedding").setParam("W", actionWeightMatrix);
-        model.getLayer("targetEmbedding").setParam("W", targetWeightMatrix);
+        initialModel.getLayer("actionEmbedding").setParam("W", actionWeightMatrix);
+        initialModel.getLayer("targetEmbedding").setParam("W", targetWeightMatrix);
 
-        ComputationGraph frozenModel = new TransferLearning.GraphBuilder(model)
+        timePredictionModel = new TransferLearning.GraphBuilder(initialModel)
                 .fineTuneConfiguration(new FineTuneConfiguration.Builder().build())
-                .setFeatureExtractor("actionEmbedding") // freezes this vertex and everything feeding into it
+                .setFeatureExtractor("actionEmbedding", "targetEmbedding") // freezes embedding layers until model has stabilised
                 .build();
 
-
-        trainModel(model);
     }
 
     List<List<Integer>> getDurationTimes() throws IOException {
@@ -211,14 +214,34 @@ public class TaskDurationPredictor {
                 .toList();
     }
 
-    void trainModel(ComputationGraph model) throws IOException {
-
+    /**
+     * Called as first training run to un-freeze model after first 100 epochs
+     * @throws IOException
+     */
+    void initialModelTraining() throws IOException {
         int numEpochs = 100;
         SimpleMultiDataSetIterator trainingIterator = getMultiDataSetIterator();
         for (int epoch = 0; epoch < numEpochs; epoch++) {
             trainingIterator.reset();
-            model.fit(trainingIterator);
-            System.out.println("Epoch " + epoch + " score: " + model.score());
+            timePredictionModel.fit(trainingIterator);
+            System.out.println("Epoch " + epoch + " score: " + timePredictionModel.score());
+        }
+        timePredictionModel = new TransferLearning.GraphBuilder(timePredictionModel)
+                .fineTuneConfiguration(new FineTuneConfiguration.Builder()
+                        .updater(new Adam(0.0001)) // use a LOWER learning rate once unfrozen
+                        .build())
+                .build(); // no setFeatureExtractor -> everything trainable, including embeddings
+
+        trainModel();
+    }
+
+    void trainModel() throws IOException {
+        int numEpochs = 100;
+        SimpleMultiDataSetIterator trainingIterator = getMultiDataSetIterator();
+        for (int epoch = 0; epoch < numEpochs; epoch++) {
+            trainingIterator.reset();
+            timePredictionModel.fit(trainingIterator);
+            System.out.println("Epoch " + epoch + " score: " + timePredictionModel.score());
         }
 
     }
@@ -298,6 +321,10 @@ public class TaskDurationPredictor {
                 .toList();
 
         return ParsingToSchema.returnParsedTasks(allTaskTitles);
+    }
+
+    ComputationGraph getTimePredictionModel(){
+        return timePredictionModel;
     }
 
 
