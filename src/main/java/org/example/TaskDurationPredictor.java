@@ -10,7 +10,6 @@ import org.deeplearning4j.nn.conf.layers.recurrent.TimeDistributed;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.MultiDataSet;
 import org.nd4j.linalg.factory.Nd4j;
 
 import java.io.File;
@@ -34,16 +33,13 @@ import org.deeplearning4j.nn.conf.graph.MergeVertex;
 import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
 import org.deeplearning4j.nn.conf.layers.PoolingType;
 
-import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
-import org.nd4j.linalg.dataset.api.iterator.MultiDataSetIterator;
-
 public class TaskDurationPredictor {
 
     // Turn all words in yourVocabularySet into an integer ID
-    Map<String, Integer> actionToIndex;
-    Map<String, Integer> targetToIndex;
-    Map<Integer, String> indexToAction;
-    Map<Integer, String> indexToTarget;
+    private Map<String, Integer> actionToIndex;
+    private Map<String, Integer> targetToIndex;
+    private Map<Integer, String> indexToAction;
+    private Map<Integer, String> indexToTarget;
 
 
     ComputationGraphConfiguration modelConfig(int actionVocabSize, int targetVocabSize, int embeddingDim){
@@ -124,7 +120,6 @@ public class TaskDurationPredictor {
                 .flatMap(task -> task.targets.stream())
                 .collect(Collectors.toSet());
 
-
         actionToIndex = new HashMap<>();
         targetToIndex = new HashMap<>();
         indexToAction = new HashMap<>();
@@ -133,16 +128,22 @@ public class TaskDurationPredictor {
         // UNK tokens to handle words not in pretrained sets at inference time:
         int aIdx = 0;
         for (String action : distinctActions) {
-            actionToIndex.put(action, aIdx++);
+            actionToIndex.put(action, aIdx);
+            indexToAction.put(aIdx,action);
+            aIdx++;
         }
-        actionToIndex.put("<UNK>", aIdx++);
+        actionToIndex.put("<UNK>", aIdx);
+        indexToAction.put(aIdx, "<UNK>");
         int actionVocabSize = actionToIndex.size();
 
         int tIdx = 0;
         for (String target : distinctTargets) {
-            targetToIndex.put(target, tIdx++);
+            targetToIndex.put(target, tIdx);
+            indexToTarget.put(tIdx,target);
+            tIdx++;
         }
-        targetToIndex.put("<UNK>", tIdx++);
+        targetToIndex.put("<UNK>", tIdx);
+        indexToTarget.put(tIdx, "<UNK>");
         int targetVocabSize = targetToIndex.size();
 
 
