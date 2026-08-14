@@ -6,6 +6,7 @@ import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
 import org.deeplearning4j.nn.conf.layers.BatchNormalization;
 import org.deeplearning4j.nn.conf.layers.EmbeddingLayer;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.layers.recurrent.TimeDistributed;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -30,6 +31,8 @@ import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 import org.deeplearning4j.nn.transferlearning.TransferLearning;
 import org.deeplearning4j.nn.transferlearning.FineTuneConfiguration;
 import org.deeplearning4j.nn.conf.graph.MergeVertex;
+import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
+import org.deeplearning4j.nn.conf.layers.PoolingType;
 
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
 import org.nd4j.linalg.dataset.api.iterator.MultiDataSetIterator;
@@ -51,7 +54,7 @@ public class TaskDurationPredictor {
         return new NeuralNetConfiguration.Builder()
                 .updater(new Adam(0.001))
                 .graphBuilder()
-                .addInputs("actionInput", "targetInput")
+                .addInputs("actionSeq", "targetSeq")
 
                 // embedding branch for action
                 .addLayer("actionEmbedding",
@@ -60,7 +63,7 @@ public class TaskDurationPredictor {
                                 .nOut(embeddingDim)
                                 .weightInit(WeightInit.ZERO) // placeholder, overwritten later
                                 .build(),
-                        "actionInput")
+                        "actionSeq")
                 .addLayer("actionNorm", new BatchNormalization.Builder().build(), "actionEmbedding")
 
 
@@ -71,28 +74,43 @@ public class TaskDurationPredictor {
                                 .nOut(embeddingDim)
                                 .weightInit(WeightInit.ZERO) // placeholder, overwritten later
                                 .build(),
-                        "targetInput")
+                        "targetSeq")
                 .addLayer("targetNorm", new BatchNormalization.Builder().build(), "targetEmbedding")
 
 
-                // merge the two embedding outputs into one vector
+                // merge output shape: [batch, embeddingDim*2, maxPairs]
                 .addVertex("merge", new MergeVertex(), "actionNorm", "targetNorm")
 
-                .addLayer("dense1",
-                        new DenseLayer.Builder()
-                                .nIn(embeddingDim * 2) // merged size = sum of both embedding dims
-                                .nOut(64)
+                // apply the SAME dense transform to every timestep (every pair) independently
+                .addLayer("perPairHidden",
+                        new TimeDistributed(new DenseLayer.Builder()
+                                .nIn(embeddingDim * 2).nOut(32)
                                 .activation(Activation.RELU)
-                                .build(),
+                                .build()),
                         "merge")
+
+                // reduce each pair's hidden vector to a single scalar duration
+                .addLayer("perPairDuration",
+                        new TimeDistributed(new DenseLayer.Builder()
+                                .nIn(32).nOut(1)
+                                .activation(Activation.IDENTITY)
+                                .build()),
+                        "perPairHidden")
+                // output shape: [batch, 1, maxPairs] — one predicted duration per pair, per timestep
+
+                // sum across the time axis (pairs), ignoring padded slots via the mask
+                .addLayer("summedDuration",
+                        new GlobalPoolingLayer.Builder(PoolingType.SUM)
+                                .build(),
+                        "perPairDuration")
+                // output shape: [batch, 1] — total predicted duration for the example
 
                 .addLayer("output",
                         new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
                                 .activation(Activation.IDENTITY)
-                                .nIn(64)
-                                .nOut(1) // predicting duration
+                                .nIn(1).nOut(1)
                                 .build(),
-                        "dense1")
+                        "summedDuration")
 
                 .setOutputs("output")
                 .build();
@@ -199,12 +217,17 @@ public class TaskDurationPredictor {
     void trainModel(ComputationGraph model) throws IOException {
 
         int numEpochs = 100;
-        List<MultiDataSet> multiDataSetsForTestTasks = getMultiDataSetsForTestTasks();
+        SimpleMultiDataSetIterator trainIterator = getMultiDataSetIterator();
+        trainIterator.setPreProcessor(normaliser);
+        for (int epoch = 0; epoch < numEpochs; epoch++) {
+            trainIterator.reset();
+            model.fit(trainIterator);
+            System.out.println("Epoch " + epoch + " score: " + model.score());
+        }
 
-        //predicted = model.output(...) * std + mean
     }
 
-    List<MultiDataSet> getMultiDataSetsForTestTasks() throws IOException {
+    SimpleMultiDataSetIterator getMultiDataSetIterator() throws IOException {
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
         List<List<Integer>> allDurationTimes = getDurationTimes();
 
@@ -223,7 +246,7 @@ public class TaskDurationPredictor {
         // build mask and pad each example to same number of action,target pairs
         int maxPairs = listOfTargets.stream().mapToInt(List::size).max().orElse(1); // Finds the highest number of targets (action,target pairs needed)
         int numExamples = parsedTasksList.size();
-        int trainingExamples = numExamples * 2;
+        int trainingExamples = numExamples * 2; // Doubled to account for one training example for each duration label
 
         if (listOfTargets.size() != numExamples){
             throw new IOException("list of targets size != numExamples");
@@ -252,21 +275,9 @@ public class TaskDurationPredictor {
             labels.putScalar(new int[]{i+numExamples, 0}, allDurationTimes.get(i).get(1));
         }
 
-
-
-
-
-        /*
-        List<MultiDataSet> listOfMultiDataSets = ;
-
-
-        MultiDataSet mds = new org.nd4j.linalg.dataset.MultiDataSet(
-                new INDArray[]{actionInputArr, targetInputArr},
-                new INDArray[]{labelArr}
+        return new SimpleMultiDataSetIterator(actionSeq, targetSeq, mask, labels, 32 // batchSize
         );
 
-         */
-        return null;
     }
 
     /**
