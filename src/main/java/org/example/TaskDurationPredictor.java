@@ -45,10 +45,6 @@ public class TaskDurationPredictor {
     Map<Integer, String> indexToAction;
     Map<Integer, String> indexToTarget;
 
-    // Used during training to normalise:
-    double mean; // mean duration across training set
-    double std;  // std dev of duration across training set
-
 
     ComputationGraphConfiguration modelConfig(int actionVocabSize, int targetVocabSize, int embeddingDim){
         return new NeuralNetConfiguration.Builder()
@@ -217,11 +213,10 @@ public class TaskDurationPredictor {
     void trainModel(ComputationGraph model) throws IOException {
 
         int numEpochs = 100;
-        SimpleMultiDataSetIterator trainIterator = getMultiDataSetIterator();
-        trainIterator.setPreProcessor(normaliser);
+        SimpleMultiDataSetIterator trainingIterator = getMultiDataSetIterator();
         for (int epoch = 0; epoch < numEpochs; epoch++) {
-            trainIterator.reset();
-            model.fit(trainIterator);
+            trainingIterator.reset();
+            model.fit(trainingIterator);
             System.out.println("Epoch " + epoch + " score: " + model.score());
         }
 
@@ -275,8 +270,11 @@ public class TaskDurationPredictor {
             labels.putScalar(new int[]{i+numExamples, 0}, allDurationTimes.get(i).get(1));
         }
 
-        return new SimpleMultiDataSetIterator(actionSeq, targetSeq, mask, labels, 32 // batchSize
-        );
+        SimpleMultiDataSetIterator iterator = new SimpleMultiDataSetIterator(actionSeq, targetSeq, mask, labels, 32); // batchSize
+        LabelNormaliser normaliser = new LabelNormaliser();
+        normaliser.fit(labels);
+        iterator.setPreProcessor(normaliser);
+        return iterator;
 
     }
 
