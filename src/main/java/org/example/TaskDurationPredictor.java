@@ -9,11 +9,12 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.recurrent.TimeDistributed;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import java.io.File;
-import java.io.IOException;
+
+import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,6 +198,8 @@ public class TaskDurationPredictor {
                 .setFeatureExtractor("actionEmbedding", "targetEmbedding") // freezes embedding layers until model has stabilised
                 .build();
 
+        saveModel();
+
     }
 
     List<List<Integer>> getDurationTimes() throws IOException {
@@ -232,7 +235,7 @@ public class TaskDurationPredictor {
                         .build())
                 .build(); // no setFeatureExtractor -> everything trainable, including embeddings
 
-        trainModel();
+        saveModel();
     }
 
     void trainModel() throws IOException {
@@ -243,8 +246,9 @@ public class TaskDurationPredictor {
             timePredictionModel.fit(trainingIterator);
             System.out.println("Epoch " + epoch + " score: " + timePredictionModel.score());
         }
-
+        saveModel();
     }
+
 
     SimpleMultiDataSetIterator getMultiDataSetIterator() throws IOException {
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
@@ -325,6 +329,23 @@ public class TaskDurationPredictor {
 
     ComputationGraph getTimePredictionModel(){
         return timePredictionModel;
+    }
+
+
+    public void saveModel() throws IOException {
+        ModelSerializer.writeModel(
+                timePredictionModel,
+                new File("task-duration-predictor.zip"),
+                true
+        );
+    }
+
+
+    public static ComputationGraph  loadModel() throws IOException {
+        return
+                ModelSerializer.restoreComputationGraph(
+                        new File("task-duration-predictor.zip")
+                );
     }
 
 
