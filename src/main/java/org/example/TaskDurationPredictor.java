@@ -58,7 +58,7 @@ public class TaskDurationPredictor {
                                 .weightInit(WeightInit.ZERO) // placeholder, overwritten later
                                 .build(),
                         "actionSeq")
-                .addLayer("actionNorm", new BatchNormalization.Builder().build(), "actionEmbedding")
+                .addLayer("actionNorm", new BatchNormalization.Builder().nOut(embeddingDim).build(), "actionEmbedding")
 
 
                 // embedding branch for target
@@ -69,7 +69,7 @@ public class TaskDurationPredictor {
                                 .weightInit(WeightInit.ZERO) // placeholder, overwritten later
                                 .build(),
                         "targetSeq")
-                .addLayer("targetNorm", new BatchNormalization.Builder().build(), "targetEmbedding")
+                .addLayer("targetNorm", new BatchNormalization.Builder().nOut(embeddingDim).build(), "targetEmbedding")
 
 
                 // merge output shape: [batch, embeddingDim*2, maxPairs]
@@ -204,17 +204,23 @@ public class TaskDurationPredictor {
 
     List<List<Integer>> getDurationTimes() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY,
+                true);
         List<Task> tasks = mapper.readValue(
                 new File("src/main/resources/MS-LaTTE_synthetic.json"),
                 mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
         );
 
-
         return tasks.stream()
-                .flatMap(task -> task.TimeTaken.stream())
-                .map(timeTaken -> timeTaken.EstimatedMinutes)
+                .map(task -> task.TimeTaken.stream()
+                        .map(timeTaken -> timeTaken.EstimatedMinutes)
+                        .toList())
                 .toList();
+
+
+
+
+
     }
 
     /**
@@ -239,6 +245,10 @@ public class TaskDurationPredictor {
     }
 
     void trainModel() throws IOException {
+        if (timePredictionModel == null) {
+            loadModel();
+        }
+
         int numEpochs = 100;
         SimpleMultiDataSetIterator trainingIterator = getMultiDataSetIterator();
         for (int epoch = 0; epoch < numEpochs; epoch++) {
@@ -253,6 +263,7 @@ public class TaskDurationPredictor {
     SimpleMultiDataSetIterator getMultiDataSetIterator() throws IOException {
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
         List<List<Integer>> allDurationTimes = getDurationTimes();
+
 
         //Turn words into their integer representation using ______ToIndex
         List<Integer> listOfActionInts = parsedTasksList.stream()
@@ -341,8 +352,8 @@ public class TaskDurationPredictor {
     }
 
 
-    public static ComputationGraph  loadModel() throws IOException {
-        return
+    public void loadModel() throws IOException {
+        timePredictionModel =
                 ModelSerializer.restoreComputationGraph(
                         new File("task-duration-predictor.zip")
                 );

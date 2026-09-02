@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import java.io.File;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
@@ -21,6 +23,13 @@ public class TrainingModel {
         durationPredictorModel.initialModelTraining();
         durationPredictorModel.trainModel();
     }
+
+    public static void trainTaskDurationPredictor() throws IOException {
+        TaskDurationPredictor durationPredictorModel = new TaskDurationPredictor();
+        durationPredictorModel.loadModel();
+        durationPredictorModel.trainModel();
+    }
+
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -55,7 +64,7 @@ class TimeJudgement {
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class TimeTaken{
-    public List<Integer> EstimatedMinutes;
+    public Integer EstimatedMinutes;
 
 }
 
