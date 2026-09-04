@@ -16,17 +16,14 @@ import java.util.List;
 
 class taskDurationPredictorTest {
 
-    /*
+
     @Test
     void embeddingLayerSetupTest() throws Exception {
-        TaskDurationPredictor taskDurationPredictor = new TaskDurationPredictor();
-        taskDurationPredictor.modelSetup();
         createAndTrainTaskDurationPredictor();
-
 
     }
 
-     */
+     /*
 
     @Test
     void paddingContentShouldNotAffectOutput_whenMaskedCorrectly() throws IOException {
@@ -57,13 +54,20 @@ class taskDurationPredictorTest {
         for (int j = realPairs; j < maxPairs; j++) {
             actionSeqB.putScalar(new int[]{0, j}, 8); // different, non-zero pad token
             targetSeqB.putScalar(new int[]{0, j}, 9);
-            // maskB stays 0 in these positions — they're still marked as padding
         }
 
+        model.setLayerMaskArrays(
+                new INDArray[]{maskA, maskA},
+                null
+        );
+
         INDArray[] outA = model.output(actionSeqA, targetSeqA);
-        // NOTE: if your model requires masks to be passed for correct output,
-        // use model.output(new INDArray[]{actionSeqA, targetSeqA}, new INDArray[]{maskA, maskA})
-        // — see comment below.
+
+        model.setLayerMaskArrays(
+                new INDArray[]{maskB, maskB},
+                null
+        );
+
         INDArray[] outB = model.output(actionSeqB, targetSeqB);
 
         double predictionA = outA[0].getDouble(0);
@@ -73,17 +77,15 @@ class taskDurationPredictorTest {
                 "Prediction changed when only PADDED (masked) values changed -mask is not propagating correctly through the branch.");
     }
 
-    /*
+
     @Test
-    void changingRealPairValuesShouldChangeOutput_sanityCheck() {
-        // Guards against a trivial pass above: if the whole network collapsed to a
-        // constant output regardless of input, the first test would falsely "pass".
-        int actionVocabSize = 10;
-        int targetVocabSize = 10;
-        int embeddingDim = 4;
+    void changingRealPairValuesShouldChangeOutput_sanityCheck() throws IOException {
+        // Guards against a trivial pass above: if the network has one constant output regardless of input, the first test would falsely "pass".
         int maxPairs = 5;
 
-        ComputationGraph model = buildTestModel(actionVocabSize, targetVocabSize, embeddingDim);
+        TaskDurationPredictor taskDurationPredictor = new TaskDurationPredictor();
+        taskDurationPredictor.modelSetup();
+        ComputationGraph model = taskDurationPredictor.getTimePredictionModel();
 
         INDArray actionSeqA = Nd4j.zeros(1, maxPairs);
         INDArray targetSeqA = Nd4j.zeros(1, maxPairs);
@@ -101,6 +103,8 @@ class taskDurationPredictorTest {
                 "Output did not change when a REAL (unmasked) input changed — network may be degenerate, invalidating the masking test above.");
     }
 
-     */
+      */
+
+
 
 }

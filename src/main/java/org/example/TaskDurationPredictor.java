@@ -9,16 +9,15 @@ import org.deeplearning4j.nn.conf.layers.recurrent.TimeDistributed;
 import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.util.ModelSerializer;
+import org.nd4j.evaluation.regression.RegressionEvaluation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
@@ -191,8 +190,6 @@ public class TaskDurationPredictor {
                 .build();
 
         saveModel();
-        System.out.println("Finished model setup");
-
     }
 
     List<List<Integer>> getDurationTimes() throws IOException {
@@ -218,12 +215,27 @@ public class TaskDurationPredictor {
      * @throws IOException
      */
     void initialModelTraining() throws IOException {
-        int numEpochs = 100;
-        SimpleMultiDataSetIterator trainingIterator = getMultiDataSetIterator();
+        int numEpochs = 20;
+        DataIterators allIterators = getMultiDataSetIterator();
+        SimpleMultiDataSetIterator trainingIterator = allIterators.training();
+        SimpleMultiDataSetIterator validationIterator = allIterators.validation();
+
         for (int epoch = 0; epoch < numEpochs; epoch++) {
             trainingIterator.reset();
             timePredictionModel.fit(trainingIterator);
-            System.out.println("Epoch " + epoch + " score: " + timePredictionModel.score());
+
+            validationIterator.reset();
+
+            RegressionEvaluation evaluation =
+                    timePredictionModel.evaluateRegression(validationIterator);
+
+            System.out.println(
+                    "Epoch " + epoch +
+                            " | training = " + timePredictionModel.score() +
+                            " | validation MAE = " + evaluation.meanAbsoluteError(0)
+            );
+
+
         }
         timePredictionModel = new TransferLearning.GraphBuilder(timePredictionModel)
                 .fineTuneConfiguration(new FineTuneConfiguration.Builder()
@@ -239,18 +251,80 @@ public class TaskDurationPredictor {
             loadModel();
         }
 
-        int numEpochs = 100;
-        SimpleMultiDataSetIterator trainingIterator = getMultiDataSetIterator();
+        int numEpochs = 30;
+        DataIterators allIterators = getMultiDataSetIterator();
+        SimpleMultiDataSetIterator trainingIterator = allIterators.training();
+        SimpleMultiDataSetIterator validationIterator = allIterators.validation();
+        SimpleMultiDataSetIterator testIterator = allIterators.test();
+
         for (int epoch = 0; epoch < numEpochs; epoch++) {
             trainingIterator.reset();
             timePredictionModel.fit(trainingIterator);
-            System.out.println("Epoch " + epoch + " score: " + timePredictionModel.score());
+
+            validationIterator.reset();
+            RegressionEvaluation evaluation = timePredictionModel.evaluateRegression(validationIterator);
+
+            System.out.println(
+                    "Epoch " + epoch +
+                            " | training = " + timePredictionModel.score() +
+                            " | validation MAE = " + evaluation.meanAbsoluteError(0)
+            );
+
         }
+        testIterator.reset();
+        RegressionEvaluation finalEvaluation = timePredictionModel.evaluateRegression(testIterator);
+        System.out.println("Test MSE:  " + finalEvaluation.meanSquaredError(0));
+        System.out.println("Test MAE:  " + finalEvaluation.meanAbsoluteError(0));
+        System.out.println("Test RMSE: " + finalEvaluation.rootMeanSquaredError(0));
+        System.out.println("Test R²:   " + finalEvaluation.rSquared(0));
+
         saveModel();
     }
 
+    private SimpleMultiDataSetIterator buildIterator(
+            List<Integer> indices,
+            List<Integer> listOfActionInts,
+            List<List<Integer>> listOfTargets,
+            List<List<Integer>> allDurationTimes,
+            int maxPairs,
+            LabelNormaliser normaliser,
+            boolean isTraining) {
+        int nDataPoints = indices.size();
+        int trainingDataPoints = nDataPoints *2;
 
-    SimpleMultiDataSetIterator getMultiDataSetIterator() throws IOException {
+        INDArray actionSeq = Nd4j.zeros(trainingDataPoints, maxPairs); // action sequence initialised to 0's for padding
+        INDArray targetSeq = Nd4j.zeros(trainingDataPoints, maxPairs);
+        INDArray mask = Nd4j.zeros(trainingDataPoints, maxPairs); // 1 = real pair, 0 = padding
+        INDArray labels = Nd4j.zeros(trainingDataPoints, 1);
+
+        // Turn all integers into INDArray for inputting into model
+        for (int i = 0; i < nDataPoints; i++) {
+
+            int originalIndex = indices.get(i);
+            List<Integer> TargetsList = listOfTargets.get(originalIndex);
+
+            for (int j = 0; j < TargetsList.size(); j++) {
+                actionSeq.putScalar(new int[]{i, j}, listOfActionInts.get(originalIndex));
+                targetSeq.putScalar(new int[]{i, j}, TargetsList.get(j));
+                mask.putScalar(new int[]{i, j}, 1.0);
+            }
+            labels.putScalar(new int[]{i, 0}, allDurationTimes.get(originalIndex).get(0));
+
+            for (int j = 0; j < TargetsList.size(); j++) {
+                actionSeq.putScalar(new int[]{i+nDataPoints, j}, listOfActionInts.get(originalIndex));
+                targetSeq.putScalar(new int[]{i+nDataPoints, j}, TargetsList.get(j));
+                mask.putScalar(new int[]{i+nDataPoints, j}, 1.0);
+            }
+            labels.putScalar(new int[]{i+nDataPoints, 0}, allDurationTimes.get(originalIndex).get(1));
+        }
+        if(isTraining){
+            normaliser.fit(labels);
+        }
+
+        return new SimpleMultiDataSetIterator(actionSeq, targetSeq, mask, labels,20);
+    }
+
+    DataIterators getMultiDataSetIterator() throws IOException {
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
         List<List<Integer>> allDurationTimes = getDurationTimes();
 
@@ -276,34 +350,28 @@ public class TaskDurationPredictor {
             throw new IOException("list of targets size != numExamples");
         }
 
-        INDArray actionSeq = Nd4j.zeros(trainingExamples, maxPairs); // action mask initialised to 0's
-        INDArray targetSeq = Nd4j.zeros(trainingExamples, maxPairs);
-        INDArray mask = Nd4j.zeros(trainingExamples, maxPairs); // 1 = real pair, 0 = padding
-        INDArray labels = Nd4j.zeros(trainingExamples, 1);
+        // Splitting data into training, validation and test (calculating indices of each):
+        List<Integer> dataIndices = IntStream.range(0, numExamples)
+                .boxed()
+                .collect(Collectors.toList());
+        Collections.shuffle(dataIndices, new Random(42));
+        int trainTasks = (int) (numExamples * 0.70);
+        int validationTasks = (int) (numExamples * 0.15);
 
-        // Turn all integers into INDArray for inputting into model
-        for (int i = 0; i < numExamples; i++) {
-            List<Integer> TargetsList = listOfTargets.get(i);
-            for (int j = 0; j < TargetsList.size(); j++) {
-                actionSeq.putScalar(new int[]{i, j}, listOfActionInts.get(i));
-                targetSeq.putScalar(new int[]{i, j}, TargetsList.get(j));
-                mask.putScalar(new int[]{i, j}, 1.0);
-            }
-            labels.putScalar(new int[]{i, 0}, allDurationTimes.get(i).get(0));
+        List<Integer> trainIndices = dataIndices.subList(0, trainTasks);
+        List<Integer> validationIndices = dataIndices.subList(trainTasks, trainTasks + validationTasks);
+        List<Integer> testIndices = dataIndices.subList(trainTasks + validationTasks, numExamples);
 
-            for (int j = 0; j < TargetsList.size(); j++) {
-                actionSeq.putScalar(new int[]{i+numExamples, j}, listOfActionInts.get(i));
-                targetSeq.putScalar(new int[]{i+numExamples, j}, TargetsList.get(j));
-                mask.putScalar(new int[]{i+numExamples, j}, 1.0);
-            }
-            labels.putScalar(new int[]{i+numExamples, 0}, allDurationTimes.get(i).get(1));
-        }
-
-        SimpleMultiDataSetIterator iterator = new SimpleMultiDataSetIterator(actionSeq, targetSeq, mask, labels, 32); // batchSize
         LabelNormaliser normaliser = new LabelNormaliser();
-        normaliser.fit(labels);
-        iterator.setPreProcessor(normaliser);
-        return iterator;
+        SimpleMultiDataSetIterator trainingIterator = buildIterator(trainIndices, listOfActionInts, listOfTargets, allDurationTimes, maxPairs, normaliser,true );
+        SimpleMultiDataSetIterator validationIterator = buildIterator(validationIndices, listOfActionInts, listOfTargets, allDurationTimes, maxPairs, normaliser, false);
+        SimpleMultiDataSetIterator TestIterator = buildIterator(testIndices, listOfActionInts, listOfTargets, allDurationTimes, maxPairs,normaliser, false);
+
+
+        trainingIterator.setPreProcessor(normaliser);
+        validationIterator.setPreProcessor(normaliser);
+        TestIterator.setPreProcessor(normaliser);
+        return new DataIterators(trainingIterator,validationIterator,TestIterator) ;
 
     }
 
@@ -351,3 +419,4 @@ public class TaskDurationPredictor {
 
 
 }
+
