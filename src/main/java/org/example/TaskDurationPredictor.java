@@ -3,8 +3,7 @@ package org.example;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deeplearning4j.nn.conf.ComputationGraphConfiguration;
-import org.deeplearning4j.nn.conf.layers.BatchNormalization;
-import org.deeplearning4j.nn.conf.layers.EmbeddingLayer;
+import org.deeplearning4j.nn.conf.layers.*;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.recurrent.TimeDistributed;
 import org.deeplearning4j.nn.graph.ComputationGraph;
@@ -21,8 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
@@ -31,8 +28,6 @@ import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
 import org.deeplearning4j.nn.transferlearning.TransferLearning;
 import org.deeplearning4j.nn.transferlearning.FineTuneConfiguration;
 import org.deeplearning4j.nn.conf.graph.MergeVertex;
-import org.deeplearning4j.nn.conf.layers.GlobalPoolingLayer;
-import org.deeplearning4j.nn.conf.layers.PoolingType;
 
 public class TaskDurationPredictor {
 
@@ -52,28 +47,25 @@ public class TaskDurationPredictor {
 
                 // embedding branch for action
                 .addLayer("actionEmbedding",
-                        new EmbeddingLayer.Builder()
+                        new EmbeddingSequenceLayer.Builder()
                                 .nIn(actionVocabSize)
                                 .nOut(embeddingDim)
                                 .weightInit(WeightInit.ZERO) // placeholder, overwritten later
                                 .build(),
                         "actionSeq")
-                .addLayer("actionNorm", new BatchNormalization.Builder().nOut(embeddingDim).build(), "actionEmbedding")
-
 
                 // embedding branch for target
                 .addLayer("targetEmbedding",
-                        new EmbeddingLayer.Builder()
+                        new EmbeddingSequenceLayer.Builder()
                                 .nIn(targetVocabSize)
                                 .nOut(embeddingDim)
                                 .weightInit(WeightInit.ZERO) // placeholder, overwritten later
                                 .build(),
                         "targetSeq")
-                .addLayer("targetNorm", new BatchNormalization.Builder().nOut(embeddingDim).build(), "targetEmbedding")
 
 
                 // merge output shape: [batch, embeddingDim*2, maxPairs]
-                .addVertex("merge", new MergeVertex(), "actionNorm", "targetNorm")
+                .addVertex("merge", new MergeVertex(), "actionEmbedding", "targetEmbedding")
 
                 // apply the SAME dense transform to every timestep (every pair) independently
                 .addLayer("perPairHidden",
@@ -199,6 +191,7 @@ public class TaskDurationPredictor {
                 .build();
 
         saveModel();
+        System.out.println("Finished model setup");
 
     }
 
@@ -216,9 +209,6 @@ public class TaskDurationPredictor {
                         .map(timeTaken -> timeTaken.EstimatedMinutes)
                         .toList())
                 .toList();
-
-
-
 
 
     }

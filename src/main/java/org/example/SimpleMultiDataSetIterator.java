@@ -46,6 +46,7 @@ public class SimpleMultiDataSetIterator implements MultiDataSetIterator {
 
         cursor = end;
 
+
         MultiDataSet mds = new MultiDataSet(
                 new INDArray[]{actionBatch, targetBatch},
                 new INDArray[]{labelBatch},
