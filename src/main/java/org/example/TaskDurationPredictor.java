@@ -37,9 +37,11 @@ public class TaskDurationPredictor {
     private Map<Integer, String> indexToAction;
     private Map<Integer, String> indexToTarget;
     private ComputationGraph timePredictionModel;
+    private boolean initialTrainingComplete;
 
 
     ComputationGraphConfiguration modelConfig(int actionVocabSize, int targetVocabSize, int embeddingDim){
+        initialTrainingComplete = false;
         return new NeuralNetConfiguration.Builder()
                 .updater(new Adam(0.001))
                 .graphBuilder()
@@ -215,9 +217,8 @@ public class TaskDurationPredictor {
      * Called as first training run to un-freeze model after first 100 epochs
      * @throws IOException
      */
-    void initialModelTraining() throws IOException {
-        int numEpochs = 15;
-        DataIterators allIterators = getMultiDataSetIterator();
+    void initialModelTraining(DataIterators allIterators) throws IOException {
+        int numEpochs = 30;
         SimpleMultiDataSetIterator trainingIterator = allIterators.training();
         SimpleMultiDataSetIterator validationIterator = allIterators.validation();
 
@@ -245,6 +246,8 @@ public class TaskDurationPredictor {
                         .build())
                 .build(); // no setFeatureExtractor -> everything trainable, including embeddings
 
+
+        initialTrainingComplete = true;
         saveModel();
     }
 
@@ -253,11 +256,15 @@ public class TaskDurationPredictor {
             loadModel();
         }
 
-        int numEpochs = 20;
+        int numEpochs = 30;
         DataIterators allIterators = getMultiDataSetIterator();
         SimpleMultiDataSetIterator trainingIterator = allIterators.training();
         SimpleMultiDataSetIterator validationIterator = allIterators.validation();
         SimpleMultiDataSetIterator testIterator = allIterators.test();
+
+        if(! initialTrainingComplete){
+            initialModelTraining(allIterators);
+        }
 
 
         for (int epoch = 0; epoch < numEpochs; epoch++) {

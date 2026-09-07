@@ -20,7 +20,6 @@ public class TrainingModel {
     public static void createAndTrainTaskDurationPredictor() throws Exception {
         TaskDurationPredictor durationPredictorModel = new TaskDurationPredictor();
         durationPredictorModel.modelSetup();
-        durationPredictorModel.initialModelTraining();
         durationPredictorModel.trainModel();
     }
 
