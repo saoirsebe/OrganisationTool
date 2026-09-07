@@ -72,18 +72,25 @@ public class TaskDurationPredictor {
                 // apply the SAME dense transform to every timestep (every pair) independently
                 .addLayer("perPairHidden",
                         new TimeDistributed(new DenseLayer.Builder()
-                                .nIn(embeddingDim * 2).nOut(32)
+                                .nIn(embeddingDim * 2).nOut(64)
                                 .activation(Activation.RELU)
                                 .build()),
                         "merge")
+
+                .addLayer("perPairHidden2",
+                        new TimeDistributed(new DenseLayer.Builder()
+                                .nIn(64).nOut(32)
+                                .activation(Activation.RELU)
+                                .build()),
+                        "perPairHidden")
 
                 // reduce each pair's hidden vector to a single scalar duration
                 .addLayer("perPairDuration",
                         new TimeDistributed(new DenseLayer.Builder()
                                 .nIn(32).nOut(1)
-                                .activation(Activation.IDENTITY)
+                                .activation(Activation.SOFTPLUS)
                                 .build()),
-                        "perPairHidden")
+                        "perPairHidden2")
                 // output shape: [batch, 1, maxPairs] — one predicted duration per pair, per timestep
 
                 // sum across the time axis (pairs), ignoring padded slots via the mask
@@ -218,7 +225,7 @@ public class TaskDurationPredictor {
      * @throws IOException
      */
     void initialModelTraining(DataIterators allIterators) throws IOException {
-        int numEpochs = 30;
+        int numEpochs = 20;
         SimpleMultiDataSetIterator trainingIterator = allIterators.training();
         SimpleMultiDataSetIterator validationIterator = allIterators.validation();
 
@@ -256,7 +263,7 @@ public class TaskDurationPredictor {
             loadModel();
         }
 
-        int numEpochs = 30;
+        int numEpochs = 20;
         DataIterators allIterators = getMultiDataSetIterator();
         SimpleMultiDataSetIterator trainingIterator = allIterators.training();
         SimpleMultiDataSetIterator validationIterator = allIterators.validation();

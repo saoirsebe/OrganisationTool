@@ -1,0 +1,113 @@
+[33mcommit 9a83fd9cd52609ecfa13cf7ce124548adf67bfd6[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m)[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Mon Sep 7 19:12:29 2026 +0100
+
+    New dataset with a new task created for each task with a slightly different description of the same task and only one EstimatedMinutes for each
+
+[33mcommit efe5048f5144176b73123f3c04c70de001e9d324[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Mon Sep 7 18:38:30 2026 +0100
+
+    use same iterators for initial training (frozen) and un-frozen training
+
+[33mcommit 29eb29ba5388de3d593c18c0e4503bb5347b2c5f[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Mon Sep 7 17:26:45 2026 +0100
+
+    Use a duplicate of labels on training so not normalising labels multiple times
+
+[33mcommit 38cf20ed55b099020ac83638901c31022145dbb1[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Fri Sep 4 14:51:28 2026 +0100
+
+    training data split into training, validation and test to check for overfitting
+
+[33mcommit cf54e9a22c933b3c960fea571e60024f98f79674[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Fri Sep 4 12:57:59 2026 +0100
+
+    padding values with mask tests
+
+[33mcommit 9bcb6a944f9be429887b96be704b4fb94d872e64[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Wed Sep 2 15:14:40 2026 +0100
+
+    FIxed flatMapping target list error so now lists the two estimatedTimes for each task
+
+[33mcommit 3b3efdb9235d188ee5d84e8897d0bac0b4422a66[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Wed Sep 2 12:52:22 2026 +0100
+
+    Training new model class and save model on each training run
+
+[33mcommit f8835ac0949e422ddd69e07f1f161a9de37923bd[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Fri Aug 14 17:04:01 2026 +0100
+
+    frozen model for first 100 epochs then un-freeze and continue training
+
+[33mcommit 803a8847d5e81a401ec2663e128594ebfd794e4c[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Fri Aug 14 16:24:41 2026 +0100
+
+    indexToAction/Target created
+
+[33mcommit 9112c85307a65475cd54ba470430e7eaac106a6f[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Fri Aug 14 16:11:44 2026 +0100
+
+    Normaliser for labels added
+
+[33mcommit 0e5094224ae1047b297bd7ba2693845e1a053535[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Fri Aug 14 15:54:55 2026 +0100
+
+    SimpleMultiDataSetIterator created
+
+[33mcommit 7ae15d5c13921e5cd76bed36886fe50a61e7f2d1[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Wed Aug 12 16:35:46 2026 +0100
+
+    Training pairs padded to Max number of targets in (Max action.target pairs per task), add a training example for each training lable
+
+[33mcommit 88cb2c92c61fe3758645849f64dfdd39a869272a[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Wed Aug 12 15:32:45 2026 +0100
+
+    removed label normalisation, will add later using NormalizerStandardize
+
+[33mcommit a667f7b7fdcc9eb3f02ef9f36b4c85c43655b22a[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Wed Aug 12 13:52:13 2026 +0100
+
+    Normalised all inputs and labels
+
+[33mcommit 5baaea383d3f7ef36dcaed7d7bc5e879049830e0[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Tue Aug 11 23:12:21 2026 +0100
+
+    Half way through creating multiDataSet list for training model -Need to collect actual duration times and add to MultiDataSet
+
+[33mcommit 6287a7b064670ce54b4534a32429355162aab679[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Tue Aug 11 22:18:38 2026 +0100
+
+    Separate embedding layers for action and target
+
+[33mcommit 59f6a34b974f9a0e90b31df0ce7051cd40cd9994[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Tue Aug 11 21:23:31 2026 +0100
+
+    Testing matrices sizes
+
+[33mcommit f623744661b522272c78947578ba9ca687d8ff10[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Tue Aug 11 20:44:02 2026 +0100
+
+    created weight matrix to initialise embedding model to weights of pretrained WordVectors
+
+[33mcommit c6575eedaf97d38c01f3e866adedcef22a698330[m
+Author: saoirsebe <saoirse.be@gmail.com>
+Date:   Tue Aug 11 20:17:50 2026 +0100
+
+    Turned all action and target words into an int ID for mapping to embedding’s
