@@ -200,7 +200,7 @@ public class TaskDurationPredictor {
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY,
                 true);
         List<Task> tasks = mapper.readValue(
-                new File("src/main/resources/MS-LaTTE_synthetic.json"),
+                new File("src/main/resources/MS-LaTTE_split.json"),
                 mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
         );
 
@@ -345,12 +345,11 @@ public class TaskDurationPredictor {
             boolean isTraining) {
         //List<List<Integer>> allDurationTimes = ogDurationTimes.dup();
         int nDataPoints = indices.size();
-        int trainingDataPoints = nDataPoints *2;
 
-        INDArray actionSeq = Nd4j.zeros(trainingDataPoints, maxPairs); // action sequence initialised to 0's for padding
-        INDArray targetSeq = Nd4j.zeros(trainingDataPoints, maxPairs);
-        INDArray mask = Nd4j.zeros(trainingDataPoints, maxPairs); // 1 = real pair, 0 = padding
-        INDArray labels = Nd4j.zeros(trainingDataPoints, 1);
+        INDArray actionSeq = Nd4j.zeros(nDataPoints, maxPairs); // action sequence initialised to 0's for padding
+        INDArray targetSeq = Nd4j.zeros(nDataPoints, maxPairs);
+        INDArray mask = Nd4j.zeros(nDataPoints, maxPairs); // 1 = real pair, 0 = padding
+        INDArray labels = Nd4j.zeros(nDataPoints, 1);
 
         // Turn all integers into INDArray for inputting into model
         for (int i = 0; i < nDataPoints; i++) {
@@ -365,12 +364,6 @@ public class TaskDurationPredictor {
             }
             labels.putScalar(new int[]{i, 0}, allDurationTimes.get(originalIndex).get(0));
 
-            for (int j = 0; j < TargetsList.size(); j++) {
-                actionSeq.putScalar(new int[]{i+nDataPoints, j}, listOfActionInts.get(originalIndex));
-                targetSeq.putScalar(new int[]{i+nDataPoints, j}, TargetsList.get(j));
-                mask.putScalar(new int[]{i+nDataPoints, j}, 1.0);
-            }
-            labels.putScalar(new int[]{i+nDataPoints, 0}, allDurationTimes.get(originalIndex).get(1));
         }
         if(isTraining){
             normaliser.fit(labels);
@@ -439,7 +432,7 @@ public class TaskDurationPredictor {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         List<Task> tasks = mapper.readValue(
-                new File("src/main/resources/MS-LaTTE_synthetic.json"),
+                new File("src/main/resources/MS-LaTTE_split.json"),
                 mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
         );
 

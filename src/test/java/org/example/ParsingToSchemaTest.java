@@ -25,7 +25,7 @@ class ParsingToSchemaTest {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         List<Task> tasks = mapper.readValue(
-                new File("src/main/resources/MS-LaTTE_synthetic.json"),
+                new File("src/main/resources/MS-LaTTE_split.json"),
                 mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
         );
 
@@ -72,7 +72,7 @@ class ParsingToSchemaTest {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
         List<Task> tasks = mapper.readValue(
-                new File("src/main/resources/MS-LaTTE_synthetic.json"),
+                new File("src/main/resources/MS-LaTTE_split.json"),
                 mapper.getTypeFactory().constructCollectionType(List.class, Task.class)
         );
 
