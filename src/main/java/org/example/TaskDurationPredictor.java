@@ -11,6 +11,7 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.evaluation.regression.RegressionEvaluation;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.api.MultiDataSetPreProcessor;
 import org.nd4j.linalg.factory.Nd4j;
 
 
@@ -215,10 +216,11 @@ public class TaskDurationPredictor {
      * @throws IOException
      */
     void initialModelTraining() throws IOException {
-        int numEpochs = 20;
+        int numEpochs = 15;
         DataIterators allIterators = getMultiDataSetIterator();
         SimpleMultiDataSetIterator trainingIterator = allIterators.training();
         SimpleMultiDataSetIterator validationIterator = allIterators.validation();
+
 
         for (int epoch = 0; epoch < numEpochs; epoch++) {
             trainingIterator.reset();
@@ -251,11 +253,12 @@ public class TaskDurationPredictor {
             loadModel();
         }
 
-        int numEpochs = 30;
+        int numEpochs = 20;
         DataIterators allIterators = getMultiDataSetIterator();
         SimpleMultiDataSetIterator trainingIterator = allIterators.training();
         SimpleMultiDataSetIterator validationIterator = allIterators.validation();
         SimpleMultiDataSetIterator testIterator = allIterators.test();
+
 
         for (int epoch = 0; epoch < numEpochs; epoch++) {
             trainingIterator.reset();
@@ -271,6 +274,28 @@ public class TaskDurationPredictor {
             );
 
         }
+
+
+        //Training set model predictions:
+        timePredictionModel.setLayerMaskArrays(
+                new INDArray[]{trainingIterator.getMaskFull(), trainingIterator.getMaskFull()},
+                null
+        );
+        INDArray trainingPredictions = timePredictionModel.output(
+                trainingIterator.getActionSeqFull(),
+                trainingIterator.getTargetSeqFull()
+        )[0];
+        LabelNormaliser trainingLabelNormaliser = (LabelNormaliser) trainingIterator.getPreProcessor();
+        INDArray trainingPredictionsOriginal = trainingLabelNormaliser.denormalize(trainingPredictions);
+        INDArray trainingActual = trainingIterator.getLabelFull();
+        for (int i = 0; i < Math.min(5, trainingPredictions.rows()); i++) {
+            System.out.println(
+                    "Actual: " + trainingActual.getDouble(i) +
+                            " | denormalize predicted: " + trainingPredictionsOriginal.getDouble(i)
+            );
+        }
+
+        // Test set:
         testIterator.reset();
         RegressionEvaluation finalEvaluation = timePredictionModel.evaluateRegression(testIterator);
         System.out.println("Test MSE:  " + finalEvaluation.meanSquaredError(0));
@@ -278,8 +303,30 @@ public class TaskDurationPredictor {
         System.out.println("Test RMSE: " + finalEvaluation.rootMeanSquaredError(0));
         System.out.println("Test R²:   " + finalEvaluation.rSquared(0));
 
+        //Test set model predictions:
+        timePredictionModel.setLayerMaskArrays(
+                new INDArray[]{testIterator.getMaskFull(), testIterator.getMaskFull()},
+                null
+        );
+        INDArray predictions = timePredictionModel.output(
+                testIterator.getActionSeqFull(),
+                testIterator.getTargetSeqFull()
+        )[0];
+
+        INDArray actual = testIterator.getLabelFull();
+        LabelNormaliser labelNormaliser = (LabelNormaliser) testIterator.getPreProcessor();
+        INDArray predictionsOriginal = labelNormaliser.denormalize(predictions);
+        for (int i = 0; i < Math.min(5, predictions.rows()); i++) {
+            System.out.println(
+                    "Actual: " + actual.getDouble(i) +
+                            " | Predicted: " + predictionsOriginal.getDouble(i)
+            );
+        }
+
+
         saveModel();
     }
+
 
     private SimpleMultiDataSetIterator buildIterator(
             List<Integer> indices,
@@ -289,6 +336,7 @@ public class TaskDurationPredictor {
             int maxPairs,
             LabelNormaliser normaliser,
             boolean isTraining) {
+        //List<List<Integer>> allDurationTimes = ogDurationTimes.dup();
         int nDataPoints = indices.size();
         int trainingDataPoints = nDataPoints *2;
 

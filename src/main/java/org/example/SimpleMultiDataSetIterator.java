@@ -42,7 +42,8 @@ public class SimpleMultiDataSetIterator implements MultiDataSetIterator {
         INDArray actionBatch = actionSeqFull.get(NDArrayIndex.interval(cursor, end), NDArrayIndex.all());
         INDArray targetBatch = targetSeqFull.get(NDArrayIndex.interval(cursor, end), NDArrayIndex.all());
         INDArray maskBatch = maskFull.get(NDArrayIndex.interval(cursor, end), NDArrayIndex.all());
-        INDArray labelBatch = labelFull.get(NDArrayIndex.interval(cursor, end), NDArrayIndex.all());
+        INDArray labelBatch = labelFull.get(NDArrayIndex.interval(cursor, end), NDArrayIndex.all())
+                .dup();
 
         cursor = end;
 
@@ -53,6 +54,8 @@ public class SimpleMultiDataSetIterator implements MultiDataSetIterator {
                 new INDArray[]{maskBatch, maskBatch},
                 new INDArray[]{null}
         );
+
+
 
         if (preProcessor != null) {
             preProcessor.preProcess(mds); // Need to normalise labels to help training stability
@@ -65,6 +68,7 @@ public class SimpleMultiDataSetIterator implements MultiDataSetIterator {
     public void setPreProcessor(MultiDataSetPreProcessor preProcessor) {
         this.preProcessor = preProcessor;
     }
+
 
     @Override
     public MultiDataSetPreProcessor getPreProcessor() {
@@ -84,5 +88,21 @@ public class SimpleMultiDataSetIterator implements MultiDataSetIterator {
     @Override
     public void reset() {
         cursor = 0;
+    }
+
+    public INDArray getActionSeqFull(){
+        return actionSeqFull;
+    }
+
+    public INDArray getTargetSeqFull() {
+        return targetSeqFull;
+    }
+
+    public INDArray getLabelFull() {
+        return labelFull;
+    }
+
+    public INDArray getMaskFull() {
+        return maskFull;
     }
 }
