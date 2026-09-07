@@ -37,3 +37,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### glove files ###
+src/main/resources/glove.6B.*.txt
