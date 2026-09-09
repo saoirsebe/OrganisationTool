@@ -1,5 +1,7 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.example.TrainingModel.createAndTrainTaskDurationPredictor;
@@ -11,15 +13,21 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-class taskDurationPredictorTest {
+class TaskDurationPredictorTest {
 
 
     @Test
     void embeddingLayerSetupTest() throws Exception {
-        createAndTrainTaskDurationPredictor();
+        //createAndTrainTaskDurationPredictor();
+        TaskDurationPredictor durationPredictorModel = new FakeTaskDurationPredictor();
+        durationPredictorModel.setInitialNumEpochs(15);
+        durationPredictorModel.setNumEpochs(20);
+        durationPredictorModel.modelSetup();
+        durationPredictorModel.trainModel();
 
     }
 
@@ -106,5 +114,5 @@ class taskDurationPredictorTest {
       */
 
 
-
 }
+

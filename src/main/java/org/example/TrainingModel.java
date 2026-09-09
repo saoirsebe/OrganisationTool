@@ -37,7 +37,7 @@ class Task {
     public String TaskTitle;
     public List<LocJudgement> LocJudgements;
     public List<TimeJudgement> TimeJudgements;
-    public List<TimeTaken> TimeTaken;
+    public int TimeTaken;
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -61,9 +61,4 @@ class TimeJudgement {
     }
 }
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-class TimeTaken{
-    public Integer EstimatedMinutes;
-
-}
 

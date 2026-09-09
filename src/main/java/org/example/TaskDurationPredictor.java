@@ -38,6 +38,8 @@ public class TaskDurationPredictor {
     private Map<Integer, String> indexToTarget;
     private ComputationGraph timePredictionModel;
     private boolean initialTrainingComplete;
+    private int initialNumEpochs = 15;
+    private int numEpochs = 30;
 
 
     ComputationGraphConfiguration modelConfig(int actionVocabSize, int targetVocabSize, int embeddingDim){
@@ -186,7 +188,7 @@ public class TaskDurationPredictor {
         }
 
 
-        ComputationGraphConfiguration conf = modelConfig(actionVocabSize, targetVocabSize,embeddingDim);
+        ComputationGraphConfiguration conf = modelConfig(actionVocabSize, targetVocabSize, embeddingDim);
 
         ComputationGraph initialModel = new ComputationGraph(conf);
         initialModel.init();
@@ -202,7 +204,7 @@ public class TaskDurationPredictor {
         saveModel();
     }
 
-    List<List<Integer>> getDurationTimes() throws IOException {
+    List<Integer> getDurationTimes() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY,
                 true);
@@ -212,10 +214,7 @@ public class TaskDurationPredictor {
         );
 
         return tasks.stream()
-                .map(task -> task.TimeTaken.stream()
-                        .map(timeTaken -> timeTaken.EstimatedMinutes)
-                        .toList())
-                .toList();
+                .map(task -> task.TimeTaken).toList();
 
 
     }
@@ -225,12 +224,11 @@ public class TaskDurationPredictor {
      * @throws IOException
      */
     void initialModelTraining(DataIterators allIterators) throws IOException {
-        int numEpochs = 20;
         SimpleMultiDataSetIterator trainingIterator = allIterators.training();
         SimpleMultiDataSetIterator validationIterator = allIterators.validation();
 
 
-        for (int epoch = 0; epoch < numEpochs; epoch++) {
+        for (int epoch = 0; epoch < initialNumEpochs; epoch++) {
             trainingIterator.reset();
             timePredictionModel.fit(trainingIterator);
 
@@ -258,12 +256,11 @@ public class TaskDurationPredictor {
         saveModel();
     }
 
+
     void trainModel() throws IOException {
         if (timePredictionModel == null) {
             loadModel();
         }
-
-        int numEpochs = 20;
         DataIterators allIterators = getMultiDataSetIterator();
         SimpleMultiDataSetIterator trainingIterator = allIterators.training();
         SimpleMultiDataSetIterator validationIterator = allIterators.validation();
@@ -341,16 +338,23 @@ public class TaskDurationPredictor {
         saveModel();
     }
 
+    public void setNumEpochs(int newNumEpochs){
+        this.numEpochs = newNumEpochs;
+    }
+    public void setInitialNumEpochs(int newInitialNumEpochs){
+        this.initialNumEpochs = newInitialNumEpochs;
+    }
+
 
     private SimpleMultiDataSetIterator buildIterator(
             List<Integer> indices,
             List<Integer> listOfActionInts,
             List<List<Integer>> listOfTargets,
-            List<List<Integer>> allDurationTimes,
+            List<Integer> allDurationTimes,
             int maxPairs,
             LabelNormaliser normaliser,
             boolean isTraining) {
-        //List<List<Integer>> allDurationTimes = ogDurationTimes.dup();
+
         int nDataPoints = indices.size();
 
         INDArray actionSeq = Nd4j.zeros(nDataPoints, maxPairs); // action sequence initialised to 0's for padding
@@ -369,7 +373,7 @@ public class TaskDurationPredictor {
                 targetSeq.putScalar(new int[]{i, j}, TargetsList.get(j));
                 mask.putScalar(new int[]{i, j}, 1.0);
             }
-            labels.putScalar(new int[]{i, 0}, allDurationTimes.get(originalIndex).get(0));
+            labels.putScalar(new int[]{i, 0}, allDurationTimes.get(originalIndex));
 
         }
         if(isTraining){
@@ -381,7 +385,7 @@ public class TaskDurationPredictor {
 
     DataIterators getMultiDataSetIterator() throws IOException {
         List<ParsedTaskDescription> parsedTasksList = getAllParsedTrainingTasks();
-        List<List<Integer>> allDurationTimes = getDurationTimes();
+        List<Integer> allDurationTimes = getDurationTimes();
 
 
         //Turn words into their integer representation using ______ToIndex
