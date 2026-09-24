@@ -1,14 +1,8 @@
-package org.example;
+package org.ogmodel;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-
-import java.io.File;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Properties;
 
 
 public class TrainingModel {

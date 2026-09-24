@@ -1,6 +1,4 @@
-package org.example;
-
-import org.nd4j.linalg.api.ndarray.INDArray;
+package org.ogmodel;
 
 public record DataIterators(
         SimpleMultiDataSetIterator training,

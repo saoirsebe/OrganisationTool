@@ -1,21 +1,8 @@
-package org.example;
+package org.ogmodel;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import static org.example.TrainingModel.createAndTrainTaskDurationPredictor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.deeplearning4j.nn.conf.layers.*;
-import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
 
 class TaskDurationPredictorTest {
 

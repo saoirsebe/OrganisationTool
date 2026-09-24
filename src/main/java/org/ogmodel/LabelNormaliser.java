@@ -1,4 +1,4 @@
-package org.example;
+package org.ogmodel;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.MultiDataSet;

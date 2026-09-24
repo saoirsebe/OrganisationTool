@@ -1,4 +1,4 @@
-package org.example;
+package org.ogmodel;
 
 public class TimeOfDayPredictor {
     /**
