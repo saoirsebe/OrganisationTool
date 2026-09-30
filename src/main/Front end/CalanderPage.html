@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Calendar</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>Calendar</h1>
+    <button class="primary" id="newTaskBtn">+ New Task</button>
+</header>
+
+<main>
+    <section class="calendar">
+        <div class="cal-header">
+            <h2 id="monthLabel"></h2>
+            <div class="cal-nav">
+                <button id="prevBtn" aria-label="Previous month">&larr;</button>
+                <button id="todayBtn">Today</button>
+                <button id="nextBtn" aria-label="Next month">&rarr;</button>
+            </div>
+        </div>
+        <div class="grid" id="grid"></div>
+    </section>
+</main>
+
+<script src="app.js"></script>
+<script>
+    let viewYear, viewMonth;
+
+    function renderCalendar() {
+        const grid = $("grid");
+        grid.innerHTML = "";
+        const tasks = Store.load().calendar;
+
+        ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].forEach(d => {
+            const el = document.createElement("div");
+            el.className = "weekday";
+            el.textContent = d;
+            grid.appendChild(el);
+        });
+
+        const first = new Date(viewYear, viewMonth, 1);
+        const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        const offset = (first.getDay() + 6) % 7; // week starts Monday
+        $("monthLabel").textContent = first.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
+        for (let i = 0; i < offset; i++) {
+            const blank = document.createElement("div");
+            blank.className = "day empty";
+            grid.appendChild(blank);
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const key = dateKey(viewYear, viewMonth, d);
+            const cell = document.createElement("div");
+            cell.className = "day" + (key === todayKey() ? " today" : "");
+            cell.innerHTML = `<span class="num">${d}</span>`;
+
+            (tasks[key] || []).slice()
+                .sort((a, b) => (a.time || "").localeCompare(b.time || ""))
+                .forEach(t => {
+                    const chip = document.createElement("div");
+                    chip.className = "task-chip";
+                    chip.textContent = (t.time ? t.time + " " : "") + t.description;
+                    chip.title = chip.textContent;
+                    cell.appendChild(chip);
+                });
+
+            // Pressing a day opens the day view page
+            cell.addEventListener("click", () => { location.href = `day.html?date=${key}`; });
+            grid.appendChild(cell);
+        }
+    }
+
+    function changeMonth(delta) {
+        viewMonth += delta;
+        if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+        renderCalendar();
+    }
+
+    function goToday() {
+        const now = new Date();
+        viewYear = now.getFullYear();
+        viewMonth = now.getMonth();
+        renderCalendar();
+    }
+
+    TaskPopup.init();
+    TaskPopup.onSaved = task => {
+        if (task.date) {
+            const [y, m] = task.date.split("-").map(Number);
+            viewYear = y; viewMonth = m - 1;
+        }
+        renderCalendar();
+    };
+
+    $("newTaskBtn").addEventListener("click", () => TaskPopup.open());
+    $("prevBtn").addEventListener("click", () => changeMonth(-1));
+    $("nextBtn").addEventListener("click", () => changeMonth(1));
+    $("todayBtn").addEventListener("click", goToday);
+    goToday();
+</script>
+</body>
+</html>

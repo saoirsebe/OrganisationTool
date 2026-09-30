@@ -1,0 +1,226 @@
+:root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --accent: #4f46e5;
+    --accent-soft: #eef2ff;
+    --border: #e5e7eb;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---------- Header ---------- */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+}
+header h1 { margin: 0; font-size: 1.25rem; }
+
+button {
+    font: inherit;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 8px 14px;
+}
+button:hover { background: var(--accent-soft); }
+.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+.primary:hover { background: #4338ca; }
+
+/* ---------- Calendar ---------- */
+main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 32px 16px;
+}
+.calendar {
+    width: 100%;
+    max-width: 900px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+.cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.cal-header h2 { margin: 0; font-size: 1.15rem; }
+.cal-nav { display: flex; gap: 8px; }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.weekday {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding-bottom: 4px;
+}
+.day {
+    min-height: 95px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    overflow: hidden;
+}
+.day:hover { background: var(--accent-soft); }
+.day.empty { border: none; cursor: default; background: none; }
+.day.today .num {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+}
+.task-chip {
+    margin-top: 4px;
+    padding: 2px 6px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- Popup ---------- */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+}
+.overlay.open { display: flex; }
+.popup {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.popup h3 { margin: 0 0 16px; }
+label { display: block; font-size: 0.85rem; color: var(--muted); margin: 12px 0 4px; }
+input, textarea {
+    width: 100%;
+    font: inherit;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+textarea { resize: vertical; min-height: 80px; }
+.row { display: flex; gap: 12px; }
+.row > div { flex: 1; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.hint { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+
+/* ---------- Toast ---------- */
+#toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+#toast.show { opacity: 1; }
+
+/* ---------- Shared link-as-button ---------- */
+.linkbtn {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    background: var(--card);
+}
+.linkbtn:hover { background: var(--accent-soft); }
+
+/* ---------- Day view ---------- */
+.day-card { max-width: 1000px; }
+.day-nav { display: flex; align-items: center; gap: 8px; }
+.untimed { margin-bottom: 16px; }
+.untimed h4 { margin: 0 0 6px; font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+.scroller {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.track { position: relative; min-height: 160px; }
+.tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid var(--border);
+}
+.tick span {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+}
+.tick:last-child span { left: auto; right: 6px; }
+.block {
+    position: absolute;
+    height: 40px;
+    padding: 4px 8px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+.block small { display: block; opacity: 0.85; }
+.now-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ef4444;
+}

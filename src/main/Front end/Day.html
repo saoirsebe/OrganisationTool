@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Day View</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <a class="linkbtn" href="CalanderPage.html">&larr; Back to calendar</a>
+    <button class="primary" id="newTaskBtn">+ New Task</button>
+</header>
+
+<main>
+    <section class="calendar day-card">
+        <div class="cal-header">
+            <h2 id="dayLabel"></h2>
+            <div class="day-nav">
+                <button id="prevBtn" aria-label="Previous day">&larr;</button>
+                <button id="todayBtn">Today</button>
+                <button id="nextBtn" aria-label="Next day">&rarr;</button>
+            </div>
+        </div>
+        <div class="untimed" id="untimed"></div>
+        <div class="scroller" id="scroller"><div class="track" id="track"></div></div>
+    </section>
+</main>
+
+<script src="app.js"></script>
+<script>
+    const HOUR_W = 120;   // pixels per hour
+    const LANE_H = 46;    // vertical space per row of blocks
+    const TOP = 34;       // room for the hour labels
+    const DEFAULT_MIN = 30; // block length when no duration was given
+
+    const param = new URLSearchParams(location.search).get("date");
+    let current = /^\d{4}-\d{2}-\d{2}$/.test(param || "") ? param : todayKey();
+
+    const toDate = key => { const [y, m, d] = key.split("-").map(Number); return new Date(y, m - 1, d); };
+    const toKey = dt => dateKey(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const toMinutes = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+    const fmt = mins => `${pad(Math.floor(mins / 60) % 24)}:${pad(mins % 60)}`;
+
+    function render() {
+        const tasks = Store.load().calendar[current] || [];
+        $("dayLabel").textContent = toDate(current).toLocaleDateString("en-GB",
+            { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+        history.replaceState(null, "", `?date=${current}`);
+
+        // Tasks with a date but no time can't sit on the slider, so list them above it
+        const untimed = tasks.filter(t => !t.time);
+        $("untimed").innerHTML = untimed.length
+            ? `<h4>No set time</h4>` + untimed.map(t => `<div class="task-chip">${escapeHtml(t.description)}</div>`).join("")
+            : "";
+
+        // Build the 0:00 -> 0:00 track
+        const track = $("track");
+        track.style.width = 24 * HOUR_W + "px";
+        track.innerHTML = "";
+        for (let h = 0; h <= 24; h++) {
+            const tick = document.createElement("div");
+            tick.className = "tick";
+            tick.style.left = h * HOUR_W + "px";
+            tick.innerHTML = `<span>${h === 24 ? "0:00 (next day)" : h + ":00"}</span>`;
+            track.appendChild(tick);
+        }
+
+        // Place blocks; overlapping tasks get separate rows (lanes)
+        const timed = tasks.filter(t => t.time)
+            .map(t => {
+                const start = toMinutes(t.time);
+                return { ...t, start, end: Math.min(start + (t.duration || DEFAULT_MIN), 1440) };
+            })
+            .sort((a, b) => a.start - b.start);
+
+        const laneEnds = [];
+        timed.forEach(t => {
+            let lane = laneEnds.findIndex(end => end <= t.start);
+            if (lane === -1) { lane = laneEnds.length; laneEnds.push(0); }
+            laneEnds[lane] = t.end;
+
+            const block = document.createElement("div");
+            block.className = "block";
+            block.style.left = (t.start / 60) * HOUR_W + "px";
+            block.style.width = Math.max(((t.end - t.start) / 60) * HOUR_W - 2, 24) + "px";
+            block.style.top = TOP + lane * LANE_H + "px";
+            block.innerHTML = `${escapeHtml(t.description)}<small>${fmt(t.start)}–${t.end >= 1440 ? "0:00" : fmt(t.end)}</small>`;
+            block.title = `${t.description} (${fmt(t.start)}–${t.end >= 1440 ? "0:00" : fmt(t.end)})`;
+            track.appendChild(block);
+        });
+        track.style.height = Math.max(160, TOP + Math.max(laneEnds.length, 1) * LANE_H + 10) + "px";
+
+        // Current time marker, and scroll somewhere useful
+        let scrollTo = 7 * 60; // default: start near 7:00
+        if (current === todayKey()) {
+            const now = new Date();
+            const mins = now.getHours() * 60 + now.getMinutes();
+            const line = document.createElement("div");
+            line.className = "now-line";
+            line.style.left = (mins / 60) * HOUR_W + "px";
+            track.appendChild(line);
+            scrollTo = Math.max(mins - 60, 0);
+        }
+        if (timed.length) scrollTo = Math.max(timed[0].start - 60, 0);
+        $("scroller").scrollLeft = (scrollTo / 60) * HOUR_W;
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function shiftDay(delta) {
+        const dt = toDate(current);
+        dt.setDate(dt.getDate() + delta);
+        current = toKey(dt);
+        render();
+    }
+
+    TaskPopup.init();
+    TaskPopup.onSaved = task => { if (task.date === current) render(); };
+
+    // New Task here pre-fills the day being viewed
+    $("newTaskBtn").addEventListener("click", () => TaskPopup.open(current));
+    $("prevBtn").addEventListener("click", () => shiftDay(-1));
+    $("nextBtn").addEventListener("click", () => shiftDay(1));
+    $("todayBtn").addEventListener("click", () => { current = todayKey(); render(); });
+    render();
+</script>
+</body>
+</html>
