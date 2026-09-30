@@ -35,13 +35,17 @@ const TaskPopup = {
         <div class="popup" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
           <h3 id="popupTitle">New Task</h3>
           <label for="desc">Description</label>
-          <textarea id="desc" placeholder="Task description"></textarea>
+          <textarea id="desc" placeholder="What needs doing?"></textarea>
           <div class="row">
             <div><label for="date">Date (optional)</label><input type="date" id="date"></div>
             <div><label for="time">Time (optional)</label><input type="time" id="time"></div>
           </div>
-          <label for="duration">Duration in minutes (optional)</label>
-          <input type="number" id="duration" min="5" step="5" placeholder="e.g. 45">
+          <label for="durHours">Duration (optional)</label>
+          <div class="row">
+            <div><input type="number" id="durHours" min="0" max="23" placeholder="Hours"></div>
+            <div><input type="number" id="durMins" min="0" max="59" placeholder="Minutes"></div>
+          </div>
+          <p class="hint">Tasks with a date appear on the calendar. Tasks without one are saved to the back-end.</p>
           <div class="actions">
             <button id="cancelBtn">Cancel</button>
             <button class="primary" id="saveBtn">Save</button>
@@ -59,7 +63,8 @@ const TaskPopup = {
         $("desc").value = "";
         $("date").value = date;
         $("time").value = "";
-        $("duration").value = "";
+        $("durHours").value = "";
+        $("durMins").value = "";
         $("overlay").classList.add("open");
         $("desc").focus();
     },
@@ -77,12 +82,15 @@ const TaskPopup = {
         const description = $("desc").value.trim();
         if (!description) { $("desc").focus(); return; }
 
+        const hours = Math.max(parseInt($("durHours").value, 10) || 0, 0);
+        const mins = Math.max(parseInt($("durMins").value, 10) || 0, 0);
+
         const task = {
             id: Date.now(),
             description,
             date: $("date").value || null,
             time: $("time").value || null,
-            duration: parseInt($("duration").value, 10) || null // minutes
+            duration: hours * 60 + mins || null // total minutes (e.g. 1h 20m = 80)
         };
 
         if (task.date) {
