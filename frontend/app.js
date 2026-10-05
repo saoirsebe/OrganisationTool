@@ -25,6 +25,11 @@ function saveTaskToBackend(task) {
     // fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(task) });
 }
 
+function taskDurationPredict(task){
+    var duration_pred_class = Java.type("com.sivajavatechie.script.DurationPredictor")
+    return duration_pred_class.predictTime(task.description)
+}
+
 /* ---------- Popup ---------- */
 const TaskPopup = {
     onSaved: null, // pages set this to re-render after a save
@@ -94,10 +99,20 @@ const TaskPopup = {
         };
 
         if (task.date) {
-            const data = Store.load();
-            (data.calendar[task.date] ||= []).push(task);
-            Store.save(data);
-            this.toast("Task added to calendar");
+            if(task.duration){
+                const data = Store.load();
+                (data.calendar[task.date] ||= []).push(task);
+                Store.save(data);
+                this.toast("Task added to calendar");
+            }
+            else{
+                task.duration = taskDurationPredict(task);
+                const data = Store.load();
+                (data.calendar[task.date] ||= []).push(task);
+                Store.save(data);
+                this.toast("Task duration predicted and added to calendar");
+            }
+
         } else {
             saveTaskToBackend(task);
             this.toast("Task saved (no date)");
