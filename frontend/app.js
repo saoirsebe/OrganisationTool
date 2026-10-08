@@ -25,9 +25,20 @@ function saveTaskToBackend(task) {
     // fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(task) });
 }
 
-function taskDurationPredict(task){
-    var duration_pred_class = Java.type("com.sivajavatechie.script.DurationPredictor")
-    return duration_pred_class.predictTime(task.description)
+async function taskDurationPredict(task) {
+    const response = await fetch('http://localhost:3000/api/task_duration_predictions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(task.description)
+    });
+
+    if (!response.ok) {
+        throw new Error('Prediction request failed');
+    }
+
+    return await response.json();
 }
 
 /* ---------- Popup ---------- */

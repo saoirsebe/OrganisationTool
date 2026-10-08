@@ -14,8 +14,10 @@ app.get('/api/health', (req, res) => {
 });
 
 
-const predictionRoutes = require('./routes/task_duration_prediction');
-app.use('/api/task_duration_predictions', predictionRoutes);
+const predictionRoutes = require('./routes/duration_prediction_route');
+app.use('/api/task_duration_prediction', predictionRoutes);
+
+const { loadModel } = require('./services/duration_prediction_service');
 
 
 // 404 handler
@@ -36,6 +38,9 @@ app.use((err, req, res, next) => {
 
 
 // Start the server
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+loadModel()
+    .then(() => app.listen(port, () => console.log(`Server is running on http://localhost:${port}`)))
+    .catch(err => {
+        console.error('Failed to load model:', err);
+        process.exit(1);
+    });
