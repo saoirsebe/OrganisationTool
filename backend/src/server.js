@@ -6,13 +6,25 @@ const port = process.env.PORT || 3000;
 app.use(cors()); // allows frontend to communicate with the API.
 app.use(express.json()); // for parsing JSON request bodies.
 
-// Define a route for GET requests
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'healthy'
-    });
-});
 
+// Database connection test:
+const pool = require('./database');
+
+async function testDatabase() {
+    try {
+        const result = await pool.query('SELECT NOW()');
+
+        console.log('Database connected!');
+        console.log(result.rows[0]);
+    } catch (error) {
+        console.error('Database connection failed:');
+        console.error(error);
+    }
+}
+
+testDatabase();
+
+//
 
 const predictionRoutes = require('./routes/duration_prediction_route');
 app.use('/api/task_duration_prediction', predictionRoutes);
@@ -44,3 +56,4 @@ loadModel()
         console.error('Failed to load model:', err);
         process.exit(1);
     });
+
