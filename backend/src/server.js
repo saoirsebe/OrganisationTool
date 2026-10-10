@@ -1,44 +1,21 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const app = express();
 const port = process.env.PORT || 3000;
 
+const app = express();
 app.use(cors()); // allows frontend to communicate with the API.
 app.use(express.json()); // for parsing JSON request bodies.
 
 
-// Database connection test:
-require('dotenv').config({
-    path: require('path').join(__dirname, '../.env')});
+// APIs
+const taskRoutes = require('./routes/tasks');
+app.use('/api/tasks', taskRoutes);
 
-const { Pool } = require('pg');
-
-console.log('DATABASE_URL loaded:', !!process.env.DATABASE_URL);
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL
-});
-
-async function testDatabase() {
-    try {
-        const result = await pool.query('SELECT NOW()');
-
-        console.log('Database connected!');
-        console.log(result.rows[0]);
-    } catch (error) {
-        console.error('Database connection failed:');
-        console.error(error);
-    }
-}
-
-testDatabase();
-
-//
-
-const predictionRoutes = require('./routes/duration_prediction_route');
+const predictionRoutes = require('./routes/durationPredictionRoute');
 app.use('/api/task_duration_prediction', predictionRoutes);
 
-const { loadModel } = require('./services/duration_prediction_service');
+const { loadModel } = require('./services/durationPredictionService');
 
 
 // 404 handler

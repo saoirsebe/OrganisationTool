@@ -1,9 +1,9 @@
 const express = require('express');
-const { predictDuration } = require('../services/duration_prediction_service');
+const { predictDuration } = require('../services/durationPredictionService');
 
 const router = express.Router();
 
-// Checks task_description fsent from frontend and calls predict from duration_prediction_service.js
+// Checks task_description fsent from frontend and calls predict from durationPredictionService.js
 router.post('/', async (req, res) => {
     const {task_description} = req.body;
 
