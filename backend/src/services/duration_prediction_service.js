@@ -1,23 +1,34 @@
 const ort = require('onnxruntime-node');
-const { AutoTokenizer } = require('@xenova/transformers');
 const fs = require('fs');
 const path = require('path');
 
-const MODEL_DIR = path.join(__dirname, 'ml/models');
+const MODEL_DIR = path.join(__dirname, '../../../Models');
+const TOKENIZER_DIR = path.join(MODEL_DIR, 'onnx_duration_out');
+const modelPath = path.join(TOKENIZER_DIR, 'onnx', 'model.onnx');
 
 let session;
 let tokenizer;
 let targetStats;
 
 async function loadModel() {
-    session = await ort.InferenceSession.create(path.join(MODEL_DIR, 'duration_model.onnx'));
-    tokenizer = await AutoTokenizer.from_pretrained(MODEL_DIR);
-    targetStats = JSON.parse(fs.readFileSync(path.join(MODEL_DIR, 'target_stats.json'), 'utf8')); // holds mean and std used to standardise during training.
+    const { env, AutoTokenizer } = await import('@huggingface/transformers');
+    env.allowRemoteModels = false;
+    env.allowLocalModels = true;
+    env.localModelPath = MODEL_DIR + path.sep;   // folder CONTAINING onnx_duration_out
 
-    console.log('Model expects inputs:', session.inputNames); // sanity-check names at startup
+    // Fail early with a clear message if the tokenizer files are missing
+    for (const f of ['tokenizer.json', 'tokenizer_config.json']) {
+        const p = path.join(TOKENIZER_DIR, f);
+        if (!fs.existsSync(p)) throw new Error(`Missing ${p}`);
+    }
+
+    session = await ort.InferenceSession.create(modelPath);
+    tokenizer = await AutoTokenizer.from_pretrained('onnx_duration_out');
+    targetStats = JSON.parse(fs.readFileSync(path.join(TOKENIZER_DIR, 'target_stats.json'), 'utf8'));
+    console.log('Model expects inputs:', session.inputNames);
 }
 
-async function predict_duration(task) {
+async function predictDuration(task) {
     if (!session) {
         throw new Error('Model not loaded — call loadModel() first');
     }
@@ -47,5 +58,5 @@ async function predict_duration(task) {
 
 module.exports = {
     loadModel,
-    predict_duration
+    predictDuration
 };

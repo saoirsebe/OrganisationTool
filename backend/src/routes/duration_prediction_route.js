@@ -1,5 +1,5 @@
 const express = require('express');
-const { predict_duration } = require('../services/duration_prediction_service');
+const { predictDuration } = require('../services/duration_prediction_service');
 
 const router = express.Router();
 
@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
     const trim_task_description = task_description.trim();
 
     try {
-        const predictedMinutes = await predict_duration(trim_task_description);
+        const predictedMinutes = await predictDuration(trim_task_description);
         res.json({ predictedMinutes });
     } catch (err) {
         console.error('Prediction failed:', err);

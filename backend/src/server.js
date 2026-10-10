@@ -8,7 +8,16 @@ app.use(express.json()); // for parsing JSON request bodies.
 
 
 // Database connection test:
-const pool = require('./database');
+require('dotenv').config({
+    path: require('path').join(__dirname, '../.env')});
+
+const { Pool } = require('pg');
+
+console.log('DATABASE_URL loaded:', !!process.env.DATABASE_URL);
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL
+});
 
 async function testDatabase() {
     try {
