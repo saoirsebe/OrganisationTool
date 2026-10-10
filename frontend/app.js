@@ -70,7 +70,10 @@ const TaskPopup = {
             <div><input type="number" id="durHours" min="0" max="23" placeholder="Hours"></div>
             <div><input type="number" id="durMins" min="0" max="59" placeholder="Minutes"></div>
           </div>
-          <p class="hint">Tasks with a date appear on the calendar. Tasks without one are saved to the back-end.</p>
+          <label for="isFixed">Is this date and time fixed?</label>
+          <div class="row">
+            <div><label for="isFixed">Check if yes</label><input type="checkbox" id="isFixed"></div>
+          </div>
           <div class="actions">
             <button id="cancelBtn">Cancel</button>
             <button class="primary" id="saveBtn">Save</button>
@@ -90,6 +93,8 @@ const TaskPopup = {
         $("time").value = "";
         $("durHours").value = "";
         $("durMins").value = "";
+        $("isFixed").checked = false;
+
         $("overlay").classList.add("open");
         $("desc").focus();
     },
@@ -120,7 +125,7 @@ const TaskPopup = {
             date: $("date").value || null,
             time: $("time").value || null,
             duration: hours * 60 + mins || null, // total minutes (e.g. 1h 20m = 80)
-            isFixed: false //PLACEHOLDER for real isFixed
+            isFixed: $("isFixed").checked
         };
 
         if (task.date) {
