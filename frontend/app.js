@@ -16,29 +16,38 @@ const Store = {
     }
 };
 
-/* Replace with a real fetch() to your API when the back-end exists. */
-function saveTaskToBackend(task) {
-    console.log("Saved to back-end:", task);
-    const data = Store.load();
-    data.backend.push(task);
-    Store.save(data);
-    // fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(task) });
+async function saveTaskToBackend(task) {
+    const res = await fetch("http://localhost:3000/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            userId: task.userId,
+            description: task.description,
+            date: task.date,
+            time: task.time,
+            duration: task.duration,
+            isFixed: task.isFixed,
+        }),
+    });
+    if (!res.ok) throw new Error("Save failed");
+    return await res.json();   // the saved task, including its database id
 }
 
 async function taskDurationPredict(task) {
-    const response = await fetch('http://localhost:3000/api/task_duration_predictions', {
+    const response = await fetch('http://localhost:3000/api/task_duration_prediction', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(task.description)
+        body: JSON.stringify({ description: task.description })
     });
 
     if (!response.ok) {
         throw new Error('Prediction request failed');
     }
 
-    return await response.json();
+    const { predictedMinutes } = await response.json();
+    return predictedMinutes;
 }
 
 /* ---------- Popup ---------- */
@@ -94,9 +103,12 @@ const TaskPopup = {
         setTimeout(() => t.classList.remove("show"), 2200);
     },
 
-    save() {
+    async save() {
         const description = $("desc").value.trim();
-        if (!description) { $("desc").focus(); return; }
+        if (!description) {
+            $("desc").focus();
+            return;
+        }
 
         const hours = Math.max(parseInt($("durHours").value, 10) || 0, 0);
         const mins = Math.max(parseInt($("durMins").value, 10) || 0, 0);
@@ -104,19 +116,20 @@ const TaskPopup = {
         const task = {
             id: Date.now(),
             description,
+            userId: 0, //PLACEHOLDER for real userId
             date: $("date").value || null,
             time: $("time").value || null,
-            duration: hours * 60 + mins || null // total minutes (e.g. 1h 20m = 80)
+            duration: hours * 60 + mins || null, // total minutes (e.g. 1h 20m = 80)
+            isFixed: false //PLACEHOLDER for real isFixed
         };
 
         if (task.date) {
-            if(task.duration){
+            if (task.duration) {
                 const data = Store.load();
                 (data.calendar[task.date] ||= []).push(task);
                 Store.save(data);
                 this.toast("Task added to calendar");
-            }
-            else{
+            } else {
                 task.duration = taskDurationPredict(task);
                 const data = Store.load();
                 (data.calendar[task.date] ||= []).push(task);
@@ -125,10 +138,21 @@ const TaskPopup = {
             }
 
         } else {
-            saveTaskToBackend(task);
+            //Pick a date code
             this.toast("Task saved (no date)");
         }
+
+        try {
+            const saved = await saveTaskToBackend(task);
+            task.id = saved.id;   // use the database id from now on
+        } catch (e) {
+            this.toast("Could not save task");
+            return;
+        }
+
         this.close();
         if (this.onSaved) this.onSaved(task);
     }
+
+
 };
