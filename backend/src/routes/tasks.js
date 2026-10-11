@@ -9,7 +9,20 @@ router.post('/', async (req, res) => {
 
         // Validate input before touching the database
         if (!userId || !description || !description.trim()) {
-            return res.status(400).json({ error: 'userId and description are required' });
+            console.log('Request body:', req.body);
+            console.log('userId:', req.body?.userId);
+            if (!userId){
+                return res.status(400).json({ error: 'userId required' });
+
+            }
+            else if(!description){
+                return res.status(400).json({ error: 'description required' });
+
+            }
+            else{
+                return res.status(400).json({ error: 'description trim' });
+
+            }
         }
 
         const task = await taskService.createTask({

@@ -59,21 +59,27 @@ const TaskPopup = {
       <div class="overlay" id="overlay">
         <div class="popup" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
           <h3 id="popupTitle">New Task</h3>
+          
           <label for="desc">Description</label>
           <textarea id="desc" placeholder="What needs doing?"></textarea>
           <div class="row">
             <div><label for="date">Date (optional)</label><input type="date" id="date"></div>
             <div><label for="time">Time (optional)</label><input type="time" id="time"></div>
           </div>
+          
           <label for="durHours">Duration (optional)</label>
           <div class="row">
             <div><input type="number" id="durHours" min="0" max="23" placeholder="Hours"></div>
             <div><input type="number" id="durMins" min="0" max="59" placeholder="Minutes"></div>
           </div>
-          <label for="isFixed">Is this date and time fixed?</label>
+      
           <div class="row">
-            <div><label for="isFixed">Check if yes</label><input type="checkbox" id="isFixed"></div>
+            <div>
+                <label for="isFixed">Check if task date and time are fixed</label>
+                <input type="checkbox" id="isFixed">
+            </div>
           </div>
+          
           <div class="actions">
             <button id="cancelBtn">Cancel</button>
             <button class="primary" id="saveBtn">Save</button>
@@ -113,6 +119,7 @@ const TaskPopup = {
         if (!description) {
             $("desc").focus();
             return;
+
         }
 
         const hours = Math.max(parseInt($("durHours").value, 10) || 0, 0);
@@ -121,7 +128,7 @@ const TaskPopup = {
         const task = {
             id: Date.now(),
             description,
-            userId: 0, //PLACEHOLDER for real userId
+            userId: 1, //PLACEHOLDER for real userId
             date: $("date").value || null,
             time: $("time").value || null,
             duration: hours * 60 + mins || null, // total minutes (e.g. 1h 20m = 80)

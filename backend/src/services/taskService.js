@@ -8,7 +8,7 @@ async function createTask({ userId, description, date, time, duration, isFixed }
               user_id AS "userId",
               description,
               task_date::text AS date,
-              task_time::text AS time,
+              to_char(task_time,'HH24:MI') AS time,
               duration_minutes AS duration,
               is_fixed AS "isFixed"`;
 
@@ -20,7 +20,7 @@ async function createTask({ userId, description, date, time, duration, isFixed }
 async function getTasksByUser(userId) {
     const sql = `
     SELECT id, user_id AS "userId", description,
-           task_date::text AS date, task_time::text AS time,
+           task_date::text AS date, to_char(task_time,'HH24:MI') AS time,
            duration_minutes AS duration, is_fixed AS "isFixed"
     FROM tasks WHERE user_id = $1
     ORDER BY task_date, task_time`;
