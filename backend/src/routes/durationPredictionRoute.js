@@ -5,14 +5,14 @@ const router = express.Router();
 
 // Checks task_description fsent from frontend and calls predict from durationPredictionService.js
 router.post('/', async (req, res) => {
-    const {task_description} = req.body;
+    const {description: task_description} = req.body;
 
     if (
         typeof task_description !== 'string' ||
         task_description.trim().length === 0
     ) {
         return res.status(400).json({
-            error: 'Invalid prediction data'
+            error: 'Invalid task description data'
         });
     }
 
