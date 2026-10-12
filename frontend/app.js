@@ -142,7 +142,8 @@ const TaskPopup = {
                 Store.save(data);
                 this.toast("Task added to calendar");
             } else {
-                task.duration = await taskDurationPredict(task);
+                const durationPrediction = await taskDurationPredict(task);
+                task.duration = Math.round(durationPrediction);
                 const data = Store.load();
                 (data.calendar[task.date] ||= []).push(task);
                 Store.save(data);
