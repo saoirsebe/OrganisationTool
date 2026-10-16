@@ -28,4 +28,15 @@ async function getTasksByUser(userId) {
     return result.rows;
 }
 
-module.exports = { createTask, getTasksByUser };
+async function getTasksByUserAndDate(userId,date) {
+    const sql = `
+    SELECT id, user_id AS "userId", description,
+           task_date::text AS date, to_char(task_time,'HH24:MI') AS time,
+           duration_minutes AS duration, is_fixed AS "isFixed"
+    FROM tasks WHERE user_id = $1 AND task_date = $2
+    ORDER BY task_date, task_time`;
+    const result = await pool.query(sql, [userId, date]); //returns all tasks matching user_id as an array
+    return result.rows;
+}
+
+module.exports = { createTask, getTasksByUser, getTasksByUserAndDate };

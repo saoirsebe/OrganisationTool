@@ -119,7 +119,6 @@ const TaskPopup = {
         if (!description) {
             $("desc").focus();
             return;
-
         }
 
         const hours = Math.max(parseInt($("durHours").value, 10) || 0, 0);
@@ -135,24 +134,19 @@ const TaskPopup = {
             isFixed: $("isFixed").checked
         };
 
-        if (task.date) {
-            if (task.duration) {
-                const data = Store.load();
-                (data.calendar[task.date] ||= []).push(task);
-                Store.save(data);
-                this.toast("Task added to calendar");
-            } else {
-                const durationPrediction = await taskDurationPredict(task);
-                task.duration = Math.round(durationPrediction);
-                const data = Store.load();
-                (data.calendar[task.date] ||= []).push(task);
-                Store.save(data);
-                this.toast("Task duration predicted and added to calendar");
-            }
+        if (!task.duration) {
+            const durationPrediction = await taskDurationPredict(task);
+            task.duration = Math.round(durationPrediction);
+            this.toast("Task duration predicted");
+        }
 
-        } else {
+        if (!task.date) {
             //Pick a date code
-            this.toast("Task saved (no date)");
+            this.toast("Date chosen");
+        }
+        if (!task.time) {
+            //Pick a time code
+            this.toast("Time chosen");
         }
 
         try {

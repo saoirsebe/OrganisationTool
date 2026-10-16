@@ -43,10 +43,17 @@
     const toMinutes = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
     const fmt = mins => `${pad(Math.floor(mins / 60) % 24)}:${pad(mins % 60)}`;
 
-    function render() {
-        const tasks = Store.load().calendar[current] || [];
+    async function loadUserDayTasks() {
+        const userId = 1;
+        const res = await fetch(`http://localhost:3000/api/tasks?userId=${userId}&date=${current}`);
+        if (!res.ok) throw new Error("Failed to load tasks");
+        return await res.json();   // Returns array of loaded tasks for userId
+    }
+
+    async function render() {
+        const tasks = await loadUserDayTasks();
         $("dayLabel").textContent = toDate(current).toLocaleDateString("en-GB",
-            { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+            {weekday: "long", day: "numeric", month: "long", year: "numeric"});
         history.replaceState(null, "", `?date=${current}`);
 
         // Tasks with a date but no time can't sit on the slider, so list them above it
@@ -71,14 +78,17 @@
         const timed = tasks.filter(t => t.time)
             .map(t => {
                 const start = toMinutes(t.time);
-                return { ...t, start, end: Math.min(start + (t.duration || DEFAULT_MIN), 1440) };
+                return {...t, start, end: Math.min(start + (t.duration || DEFAULT_MIN), 1440)};
             })
             .sort((a, b) => a.start - b.start);
 
         const laneEnds = [];
         timed.forEach(t => {
             let lane = laneEnds.findIndex(end => end <= t.start);
-            if (lane === -1) { lane = laneEnds.length; laneEnds.push(0); }
+            if (lane === -1) {
+                lane = laneEnds.length;
+                laneEnds.push(0);
+            }
             laneEnds[lane] = t.end;
 
             const block = document.createElement("div");

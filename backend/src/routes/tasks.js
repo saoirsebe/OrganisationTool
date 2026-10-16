@@ -41,10 +41,21 @@ router.post('/', async (req, res) => {
     }
 });
 
-// GET /api/tasks?userId=1  -> list a user's tasks
+
+// GET routs to get user's tasks either just by userId or UserId and specific date
 router.get('/', async (req, res) => {
+    console.log("Query parameters:", req.query);
     try {
-        const tasks = await taskService.getTasksByUser(req.query.userId);
+        let tasks;
+
+        if(req.query.date){
+            // GET /api/tasks?userId=1&date=2026-10-16
+            tasks = await taskService.getTasksByUserAndDate(req.query.userId, req.query.date);
+        } else{
+            // GET /api/tasks?userId=1
+            tasks = await taskService.getTasksByUser(req.query.userId);
+        }
+
         res.json(tasks);
     } catch (err) {
         console.error(err);
