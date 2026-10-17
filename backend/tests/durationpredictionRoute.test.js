@@ -1,5 +1,10 @@
 const request = require('supertest');
 const app = require('../src/appBackend');
+const { loadModel } = require('../src/services/durationPredictionService');
+
+beforeAll(async () => {
+    await loadModel();
+}, 60000);
 
 describe('POST /api/task_duration_prediction', () => {
     it('rejects a request with missing input text', async () => {

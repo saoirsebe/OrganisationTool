@@ -9,8 +9,19 @@ const modelPath = path.join(TOKENIZER_DIR, 'onnx', 'model.onnx');
 let session;
 let tokenizer;
 let targetStats;
+let loading;
 
-async function loadModel() {
+function loadModel() {
+    if (!loading) {
+        loading = doLoad().catch((err) => {
+            loading = undefined; // allow a retry if loading failed
+            throw err;
+        });
+    }
+    return loading;
+}
+
+async function doLoad() {
     const { env, AutoTokenizer } = await import('@huggingface/transformers');
     env.allowRemoteModels = false;
     env.allowLocalModels = true;
@@ -25,7 +36,6 @@ async function loadModel() {
     session = await ort.InferenceSession.create(modelPath);
     tokenizer = await AutoTokenizer.from_pretrained('onnx_duration_out');
     targetStats = JSON.parse(fs.readFileSync(path.join(TOKENIZER_DIR, 'target_stats.json'), 'utf8'));
-    console.log('Model expects inputs:', session.inputNames);
 }
 
 async function predictDuration(task) {
@@ -47,13 +57,14 @@ async function predictDuration(task) {
         feeds.token_type_ids = makeTensor(encoded.token_type_ids);
     }
 
+    console.log('Running ONNX inference...');
     const results = await session.run(feeds);
+    console.log('ONNX inference completed.');
     const outputName = session.outputNames[0];
     const z = results[outputName].data[0]; // standardized log-minutes
 
     // Undo the transform applied in train.py: log then standardize
-    const minutes = Math.exp(z * targetStats.std + targetStats.mean);
-    return minutes;
+    return Math.exp(z * targetStats.std + targetStats.mean);
 }
 
 module.exports = {
