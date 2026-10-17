@@ -57,9 +57,7 @@ async function predictDuration(task) {
         feeds.token_type_ids = makeTensor(encoded.token_type_ids);
     }
 
-    console.log('Running ONNX inference...');
     const results = await session.run(feeds);
-    console.log('ONNX inference completed.');
     const outputName = session.outputNames[0];
     const z = results[outputName].data[0]; // standardized log-minutes
 

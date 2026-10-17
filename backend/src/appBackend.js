@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const predictionRoutes = require("./routes/durationPredictionRoute");
 
 const app = express();
 
