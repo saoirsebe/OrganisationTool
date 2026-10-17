@@ -1,21 +1,10 @@
 require('dotenv').config({
     path: require('path').join(__dirname, '../.env')});
-const express = require('express');
-const cors = require('cors');
 const port = process.env.PORT || 3000;
-
-const app = express();
-app.use(cors()); // allows frontend to communicate with the API.
-app.use(express.json()); // for parsing JSON request bodies.
+const app = require('./appBackend'); // load app from appBackend
 
 
-// APIs
-const taskRoutes = require('./routes/tasks');
-app.use('/api/tasks', taskRoutes);
-
-const predictionRoutes = require('./routes/durationPredictionRoute');
-app.use('/api/task_duration_prediction', predictionRoutes);
-
+// load prediction onnx model on startup
 const { loadModel } = require('./services/durationPredictionService');
 
 
