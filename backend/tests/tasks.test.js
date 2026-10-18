@@ -1,9 +1,6 @@
-const request = require('supertest');
-const app = require('../src/appBackend');
-const db = require('../src/database');
-
-beforeEach(async () => { await db.query('TRUNCATE tasks RESTART IDENTITY'); });
-afterAll(async () => { await db.end(); });
+require('./dbSetup')
+const request = require("supertest");
+const app = require("../src/appBackend");
 
 describe('POST /api/tasks', () => {
     it('creates a task', async () => {

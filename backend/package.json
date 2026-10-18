@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "lint": "eslint .",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand --forceExit",
-    "migrate": "node scripts/migrate.js"
+    "migrate": "node-pg-migrate up -m migrations",
+    "migrate:test": "node-pg-migrate up -m migrations --envPath .env.test"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +29,7 @@
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
     "jest": "^30.5.2",
+    "node-pg-migrate": "^9.0.0",
     "nodemon": "^3.1.14",
     "supertest": "^7.3.1"
   }

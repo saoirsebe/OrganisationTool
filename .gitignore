@@ -41,6 +41,8 @@ build/
 ### node modules ###
 node_modules/
 
+### env ###
 backend/.env
+backend/.env.test
 
 Models/onnx_duration_out/
