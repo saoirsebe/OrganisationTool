@@ -1,8 +1,7 @@
-require('dotenv').config({
-    path: require('path').join(__dirname, '../.env')});
+const path = require('path');
+require('dotenv').config({path: path.join(__dirname, '../.env')});
 const port = process.env.PORT || 3000;
 const app = require('./appBackend'); // load app from appBackend
-
 
 // load prediction onnx model on startup
 const { loadModel } = require('./services/durationPredictionService');
