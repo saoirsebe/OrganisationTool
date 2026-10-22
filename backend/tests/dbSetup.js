@@ -6,3 +6,5 @@ beforeEach(async () => {
 afterAll(async () => {
     await db.end();
 });
+
+module.exports = db;
