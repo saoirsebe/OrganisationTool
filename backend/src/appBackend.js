@@ -12,4 +12,6 @@ app.use('/api/tasks', require('./routes/tasks'));
 
 app.use('/api/task_duration_prediction', require('./routes/durationPredictionRoute'));
 
+app.use('/api/schedule', require('./routes/schedule'));
+
 module.exports = app;
