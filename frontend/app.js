@@ -1,4 +1,4 @@
-/* Shared logic: storage, helpers and the New Task popup (used by index.html and day.html) */
+/* Shared logic: storage, helpers and the New Task popup */
 
 const pad = n => String(n).padStart(2, "0");
 const dateKey = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
