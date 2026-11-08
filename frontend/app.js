@@ -5,16 +5,7 @@ const dateKey = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
 const todayKey = () => { const n = new Date(); return dateKey(n.getFullYear(), n.getMonth(), n.getDate()); };
 const $ = id => document.getElementById(id);
 
-/* ---------- Storage (localStorage stands in for a database so both pages share data) ---------- */
-const Store = {
-    load() {
-        try { return JSON.parse(localStorage.getItem("taskAppData")) || { calendar: {}, backend: [] }; }
-        catch { return { calendar: {}, backend: [] }; }
-    },
-    save(data) {
-        try { localStorage.setItem("taskAppData", JSON.stringify(data)); } catch {}
-    }
-};
+
 
 async function saveTaskToBackend(task) {
     const res = await fetch("http://localhost:3000/api/tasks", {
