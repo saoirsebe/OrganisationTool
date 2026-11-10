@@ -48,6 +48,28 @@ async function taskDurationPredict(task) {
 const TaskPopup = {
     onSaved: null, // pages set this to re-render after a save
 
+    updateFixedOptions() {
+        const taskDate = $("date");
+        const taskTime = $("time");
+        const hasDate = taskDate.value !== '';
+        const hasTime = taskTime.value !== '';
+
+        // Show date checkbox only when a date exists
+        $("dateFixedContainer").style.display = hasDate ? 'flex' : 'none';
+
+        // Show time checkbox only when both date and time exist
+        $("timeFixedContainer").style.display =
+            (hasDate && hasTime) ? 'flex' : 'none';
+
+        // Reset checkboxes if their inputs are removed
+        if (!hasDate) {
+            dateIsFixed.checked = false;
+            timeIsFixed.checked = false;
+        } else if (!hasTime) {
+            timeIsFixed.checked = false;
+        }
+    },
+
     init() {
         document.body.insertAdjacentHTML("beforeend", `
       <div class="overlay" id="overlay">
@@ -58,11 +80,6 @@ const TaskPopup = {
           <textarea id="desc" placeholder="What needs doing?"></textarea>
           
           <div class="row">
-            <div><label for="date">Date (optional)</label><input type="date" id="date"></div>
-            <div><label for="time">Time (optional)</label><input type="time" id="time"></div>
-          </div>
-          
-          <div class="row">
             <label for="priority">Priority *</label>
             <select id="priority">
               <option value="1">High</option>
@@ -70,14 +87,18 @@ const TaskPopup = {
               <option value="3">Low</option>
             </select>
           </div>
-      
+          
+          <div class="row">
+            <div><label for="date">Date (optional)</label><input type="date" id="date"></div>
+            <div><label for="time">Time (optional)</label><input type="time" id="time"></div>
+          </div>
+          
           <div class="row fixed-options">
-            <div>
+            <div id="dateFixedContainer" style="display: none;">
                 <label for="dateIsFixed">Date is fixed</label>
                 <input type="checkbox" id="dateIsFixed">
             </div>
-        
-            <div>
+            <div id="timeFixedContainer" style="display: none;">
                 <label for="timeIsFixed">Time is fixed</label>
                 <input type="checkbox" id="timeIsFixed">
             </div>
@@ -91,8 +112,10 @@ const TaskPopup = {
           
           <label for="deadlineDate">Task deadline (Optional)</label>
           <div class="row">
-            <div><label for="deadlineDate">Date </label><input type="date" id="deadlineDate"></div>
-            <div><label for="deadlineTime">Time (optional)</label><input type="time" id="deadlineTime"></div>
+            <label for="deadlineDate">Date </label>
+            <div><input type="date" id="deadlineDate"></div>
+            <label for="deadlineTime">Time (optional)</label>
+            <div><input type="time" id="deadlineTime"></div>
           </div>
           
           <div class="actions">
@@ -102,10 +125,27 @@ const TaskPopup = {
         </div>
       </div>
       <div id="toast"></div>`);
+
         $("cancelBtn").addEventListener("click", () => this.close());
         $("saveBtn").addEventListener("click", () => this.save());
         $("overlay").addEventListener("click", e => { if (e.target === $("overlay")) this.close(); });
         document.addEventListener("keydown", e => { if (e.key === "Escape") this.close(); });
+
+        const dateIsFixed = document.getElementById('dateIsFixed');
+        const timeIsFixed = document.getElementById('timeIsFixed');
+        timeIsFixed.addEventListener('change', () => {
+            if (timeIsFixed.checked) {
+                dateIsFixed.checked = true;
+            }
+        });
+        dateIsFixed.addEventListener('change', () => {
+            if (dateIsFixed.checked === false) {
+                timeIsFixed.checked = false;
+            }
+        });
+        $("date").addEventListener('input', () => this.updateFixedOptions());
+        $("time").addEventListener('input', () => this.updateFixedOptions());
+        this.updateFixedOptions();
     },
 
     open(date = "") {
