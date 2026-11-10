@@ -1,18 +1,21 @@
 const pool = require('../database');
 
-async function createTask({ userId, description, date, time, duration, isFixed }) {
+async function createTask({ userId, description, date, time, duration, isFixed, deadline, priority }) {
     const sql = `
-    INSERT INTO tasks (user_id, description, task_date, task_time, duration_minutes, is_fixed)
-    VALUES ($1, $2, $3, $4, $5, $6)  --placeholders to protect against SQL injection
-    RETURNING id,
-              user_id AS "userId",
-              description,
-              task_date::text AS date,
-              to_char(task_time,'HH24:MI') AS time,
-              duration_minutes AS duration,
-              is_fixed AS "isFixed"`;
+    INSERT INTO tasks (user_id, description, task_date, task_time, duration_minutes, is_fixed, deadline, priority)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)  --placeholders to protect against SQL injection
+    RETURNING 
+        id,
+        user_id AS "userId",
+        description,
+        task_date::text AS date,
+        to_char(task_time,'HH24:MI') AS time,
+        duration_minutes AS duration,
+        is_fixed AS "isFixed",
+        deadline,
+        priority`;
 
-    const values = [userId, description, date, time, duration, isFixed];
+    const values = [userId, description, date, time, duration, isFixed, deadline, priority];
     const result = await pool.query(sql, values);
     return result.rows[0]; //Returns row created by db
 }
@@ -21,7 +24,7 @@ async function getTasksByUser(userId) {
     const sql = `
     SELECT id, user_id AS "userId", description,
            task_date::text AS date, to_char(task_time,'HH24:MI') AS time,
-           duration_minutes AS duration, is_fixed AS "isFixed"
+           duration_minutes AS duration, is_fixed AS "isFixed", deadline, priority
     FROM tasks WHERE user_id = $1
     ORDER BY task_date, task_time`;
     const result = await pool.query(sql, [userId]); //returns all tasks matching user_id as an array
@@ -32,7 +35,7 @@ async function getTasksByUserAndDate(userId,date) {
     const sql = `
     SELECT id, user_id AS "userId", description,
            task_date::text AS date, to_char(task_time,'HH24:MI') AS time,
-           duration_minutes AS duration, is_fixed AS "isFixed"
+           duration_minutes AS duration, is_fixed AS "isFixed", deadline, priority
     FROM tasks WHERE user_id = $1 AND task_date = $2
     ORDER BY task_date, task_time`;
     const result = await pool.query(sql, [userId, date]); //returns all tasks matching user_id as an array

@@ -18,6 +18,8 @@ async function saveTaskToBackend(task) {
             time: task.time,
             duration: task.duration,
             isFixed: task.isFixed,
+            deadline: task.deadline,
+            priority: task.priority
         }),
     });
     if (!res.ok) throw new Error("Save failed");
@@ -53,6 +55,7 @@ const TaskPopup = {
           
           <label for="desc">Description</label>
           <textarea id="desc" placeholder="What needs doing?"></textarea>
+          
           <div class="row">
             <div><label for="date">Date (optional)</label><input type="date" id="date"></div>
             <div><label for="time">Time (optional)</label><input type="time" id="time"></div>
@@ -69,6 +72,21 @@ const TaskPopup = {
                 <label for="isFixed">Check if task date and time are fixed</label>
                 <input type="checkbox" id="isFixed">
             </div>
+          </div>
+          
+          <label for="deadlineDate">Task deadline (Optional)</label>
+          <div class="row">
+            <div><label for="deadlineDate">Date </label><input type="date" id="deadlineDate"></div>
+            <div><label for="deadlineTime">Time (optional)</label><input type="time" id="deadlineTime"></div>
+          </div>
+          
+          <div class="row">
+            <label for="priority">Priority</label>
+            <select id="priority">
+              <option value="1">High</option>
+              <option value="2" selected>Medium</option>
+              <option value="3">Low</option>
+            </select>
           </div>
           
           <div class="actions">
@@ -91,6 +109,9 @@ const TaskPopup = {
         $("durHours").value = "";
         $("durMins").value = "";
         $("isFixed").checked = false;
+        $("priority").value = "";
+        $("deadlineDate").value = "";
+        $("deadlineTime").value = "";
 
         $("overlay").classList.add("open");
         $("desc").focus();
@@ -115,6 +136,12 @@ const TaskPopup = {
         const hours = Math.max(parseInt($("durHours").value, 10) || 0, 0);
         const mins = Math.max(parseInt($("durMins").value, 10) || 0, 0);
 
+        const deadlineDate = $("deadlineDate").value;
+        const deadlineTime = $("deadlineTime").value;
+        const deadline = deadlineDate
+            ? `${deadlineDate}T${deadlineTime || '23:59'}`
+            : null;
+
         const task = {
             id: Date.now(),
             description,
@@ -122,7 +149,9 @@ const TaskPopup = {
             date: $("date").value || null,
             time: $("time").value || null,
             duration: hours * 60 + mins || null, // total minutes (e.g. 1h 20m = 80)
-            isFixed: $("isFixed").checked
+            isFixed: $("isFixed").checked,
+            deadline: deadline || null,
+            priority: $("priority").value
         };
 
         if (!task.duration) {
