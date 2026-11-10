@@ -1,6 +1,6 @@
 const taskService = require('./taskService');
 
-async function organiseDateTasks(userId, date) {
+async function scheduleDay(userId, date) {
     const tasks = await taskService.getTasksByUserAndDate(userId, date);
     return tasks;
 }
@@ -26,5 +26,5 @@ async function scheduleWeek(userId, startDate) {
 
 
 module.exports = {
-    organiseDateTasks, scheduleWeek
+    scheduleDay, scheduleWeek
 };

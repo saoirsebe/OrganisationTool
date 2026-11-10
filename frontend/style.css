@@ -160,6 +160,33 @@ textarea { resize: vertical; min-height: 80px; }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .hint { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
 
+.time-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.time-input-wrapper input {
+    width: 100%;
+    padding-right: 35px;
+}
+
+#clearTimeBtn {
+    display: none;
+    position: absolute;
+    right: 80px;
+    border: none;
+    background: transparent;
+    color: #888;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 2px 5px;
+}
+
+#clearTimeBtn:hover {
+    color: red;
+}
+
 /* ---------- Toast ---------- */
 #toast {
     position: fixed;

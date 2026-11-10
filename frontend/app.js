@@ -90,7 +90,15 @@ const TaskPopup = {
           
           <div class="row">
             <div><label for="date">Date (optional)</label><input type="date" id="date"></div>
-            <div><label for="time">Time (optional)</label><input type="time" id="time"></div>
+            <div><label for="time">Time (optional)</label>
+            <div class="time-input-wrapper">
+                <input type="time" id="time">
+                <button type="button" id="clearTimeBtn" aria-label="Clear time" title="Clear time">×</button>
+                </div>
+            </div>
+          </div>
+          <div id="dateError" style="display: none; color: red; font-size: 13px;">
+            Please enter a date if you want to specify a time.
           </div>
           
           <div class="row fixed-options">
@@ -112,10 +120,13 @@ const TaskPopup = {
           
           <label for="deadlineDate">Task deadline (Optional)</label>
           <div class="row">
-            <label for="deadlineDate">Date </label>
+            <label for="deadlineDate">Date</label>
             <div><input type="date" id="deadlineDate"></div>
-            <label for="deadlineTime">Time (optional)</label>
+            <label for="deadlineTime">Time</label>
             <div><input type="time" id="deadlineTime"></div>
+          </div>
+          <div id="deadlineDateError" style="display: none; color: red; font-size: 13px;">
+            Please enter a deadline date if you want to specify a time.
           </div>
           
           <div class="actions">
@@ -125,12 +136,13 @@ const TaskPopup = {
         </div>
       </div>
       <div id="toast"></div>`);
-
+        // Save, close functionality
         $("cancelBtn").addEventListener("click", () => this.close());
         $("saveBtn").addEventListener("click", () => this.save());
         $("overlay").addEventListener("click", e => { if (e.target === $("overlay")) this.close(); });
         document.addEventListener("keydown", e => { if (e.key === "Escape") this.close(); });
 
+        // Ensures timeIsFixed is only checked if dateIsFixed is checked
         const dateIsFixed = document.getElementById('dateIsFixed');
         const timeIsFixed = document.getElementById('timeIsFixed');
         timeIsFixed.addEventListener('change', () => {
@@ -143,9 +155,27 @@ const TaskPopup = {
                 timeIsFixed.checked = false;
             }
         });
-        $("date").addEventListener('input', () => this.updateFixedOptions());
-        $("time").addEventListener('input', () => this.updateFixedOptions());
+
+        // dateIsFixed only shows if date set and timeIsFixed only shows if time set with updateFixedOptions()
+        // If time is set, option to clear time is shown with x button using updateClearTimeButton()
+        const timeInput = $("time");
+        const updateClearTimeButton = () => {
+            $("clearTimeBtn").style.display =  timeInput.value ? "block" : "none";
+        };
+        $("date").addEventListener('input', () => this.updateFixedOptions() );
+
+        timeInput.addEventListener('input', () => {
+            this.updateFixedOptions();
+            updateClearTimeButton();
+        });
+
+        $("clearTimeBtn").addEventListener("click", () => {
+            timeInput.value = "";
+            timeInput.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
         this.updateFixedOptions();
+        updateClearTimeButton();
     },
 
     open(date = "") {
@@ -174,6 +204,7 @@ const TaskPopup = {
     },
 
     async save() {
+        // Input validation:
         const description = $("desc").value.trim();
         if (!description) {
             $("desc").focus();
@@ -184,12 +215,29 @@ const TaskPopup = {
             $("priority").focus();
             return;
         }
+        // Check if time is entered without a date
+        const dateError = $("dateError");
+        const date = $("date");
+        const time = $("time");
+        if (time.value !== "" && date.value === "") {
+            dateError.style.display = "block";
+            return;
+        }
+        dateError.style.display = "none";
+        // Check if deadline time entered without a date
+        const deadlineDateError = $("deadlineDateError");
+        const deadlineDate = $("deadlineDate").value;
+        const deadlineTime = $("deadlineTime").value;
+        if (deadlineTime !== "" && deadlineDate === "") {
+            deadlineDateError.style.display = "block";
+            return;
+        }
+        deadlineDateError.style.display = "none";
 
         const hours = Math.max(parseInt($("durHours").value, 10) || 0, 0);
         const mins = Math.max(parseInt($("durMins").value, 10) || 0, 0);
 
-        const deadlineDate = $("deadlineDate").value;
-        const deadlineTime = $("deadlineTime").value;
+
         const deadline = deadlineDate
             ? `${deadlineDate}T${deadlineTime || '23:59'}`
             : null;
