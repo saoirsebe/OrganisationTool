@@ -8,7 +8,7 @@ router.post('/', async (req, res) => {
         const { userId, description, date, time, duration, dateIsFixed, timeIsFixed, deadline, priority } = req.body;
 
         // Validate input before touching the database
-        if (!userId || !description || !description.trim()) {
+        if (!userId || !description || !description.trim()||!priority ) {
             if (!userId){
                 return res.status(400).json({ error: 'userId required' });
 

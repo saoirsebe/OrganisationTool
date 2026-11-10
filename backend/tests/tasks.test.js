@@ -47,7 +47,7 @@ describe('GET /api/tasks?userId=${userId}', () => {
         expect(getRes.body[0].priority).toBe(1);
         expect(getRes.body[1].description).toBe('Review code');
         expect(getRes.body[1].userId).toBe(1);
-        expect(getRes.body[0].priority).toBe(2);
+        expect(getRes.body[1].priority).toBe(2);
 
     });
 
