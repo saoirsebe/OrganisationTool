@@ -5,7 +5,7 @@ const taskService = require('../services/taskService');
 // POST /api/tasks  -> create a task
 router.post('/', async (req, res) => {
     try {
-        const { userId, description, date, time, duration, isFixed, deadline, priority } = req.body;
+        const { userId, description, date, time, duration, dateIsFixed, timeIsFixed, deadline, priority } = req.body;
 
         // Validate input before touching the database
         if (!userId || !description || !description.trim()) {
@@ -15,6 +15,10 @@ router.post('/', async (req, res) => {
             }
             else if(!description){
                 return res.status(400).json({ error: 'description required' });
+
+            }
+            else if(!priority){
+                return res.status(400).json({ error: 'priority required' });
 
             }
             else{
@@ -30,7 +34,8 @@ router.post('/', async (req, res) => {
             date: date || null,
             time: time || null,
             duration: duration || null,
-            isFixed: !!isFixed,
+            dateIsFixed: !!dateIsFixed,
+            timeIsFixed: !!timeIsFixed,
             deadline: deadline || null,
             priority: priority ,
         });

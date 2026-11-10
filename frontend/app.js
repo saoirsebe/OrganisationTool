@@ -17,7 +17,8 @@ async function saveTaskToBackend(task) {
             date: task.date,
             time: task.time,
             duration: task.duration,
-            isFixed: task.isFixed,
+            dateIsFixed: task.dateIsFixed,
+            timeIsFixed: task.timeIsFixed,
             deadline: task.deadline,
             priority: task.priority
         }),
@@ -53,7 +54,7 @@ const TaskPopup = {
         <div class="popup" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
           <h3 id="popupTitle">New Task</h3>
           
-          <label for="desc">Description</label>
+          <label for="desc">Description *</label>
           <textarea id="desc" placeholder="What needs doing?"></textarea>
           
           <div class="row">
@@ -61,32 +62,37 @@ const TaskPopup = {
             <div><label for="time">Time (optional)</label><input type="time" id="time"></div>
           </div>
           
+          <div class="row">
+            <label for="priority">Priority *</label>
+            <select id="priority">
+              <option value="1">High</option>
+              <option value="2" selected>Medium</option>
+              <option value="3">Low</option>
+            </select>
+          </div>
+      
+          <div class="row fixed-options">
+            <div>
+                <label for="dateIsFixed">Date is fixed</label>
+                <input type="checkbox" id="dateIsFixed">
+            </div>
+        
+            <div>
+                <label for="timeIsFixed">Time is fixed</label>
+                <input type="checkbox" id="timeIsFixed">
+            </div>
+          </div>
+          
           <label for="durHours">Duration (optional)</label>
           <div class="row">
             <div><input type="number" id="durHours" min="0" max="23" placeholder="Hours"></div>
             <div><input type="number" id="durMins" min="0" max="59" placeholder="Minutes"></div>
-          </div>
-      
-          <div class="row">
-            <div>
-                <label for="isFixed">Check if task date and time are fixed</label>
-                <input type="checkbox" id="isFixed">
-            </div>
           </div>
           
           <label for="deadlineDate">Task deadline (Optional)</label>
           <div class="row">
             <div><label for="deadlineDate">Date </label><input type="date" id="deadlineDate"></div>
             <div><label for="deadlineTime">Time (optional)</label><input type="time" id="deadlineTime"></div>
-          </div>
-          
-          <div class="row">
-            <label for="priority">Priority</label>
-            <select id="priority">
-              <option value="1">High</option>
-              <option value="2" selected>Medium</option>
-              <option value="3">Low</option>
-            </select>
           </div>
           
           <div class="actions">
@@ -108,7 +114,8 @@ const TaskPopup = {
         $("time").value = "";
         $("durHours").value = "";
         $("durMins").value = "";
-        $("isFixed").checked = false;
+        $("dateIsFixed").checked = false;
+        $("timeIsFixed").checked = false;
         $("priority").value = "";
         $("deadlineDate").value = "";
         $("deadlineTime").value = "";
@@ -132,6 +139,11 @@ const TaskPopup = {
             $("desc").focus();
             return;
         }
+        const priority = $("priority").value;
+        if (!priority) {
+            $("priority").focus();
+            return;
+        }
 
         const hours = Math.max(parseInt($("durHours").value, 10) || 0, 0);
         const mins = Math.max(parseInt($("durMins").value, 10) || 0, 0);
@@ -149,7 +161,8 @@ const TaskPopup = {
             date: $("date").value || null,
             time: $("time").value || null,
             duration: hours * 60 + mins || null, // total minutes (e.g. 1h 20m = 80)
-            isFixed: $("isFixed").checked,
+            dateIsFixed: $("dateIsFixed").checked,
+            timeIsFixed: $("timeIsFixed").checked,
             deadline: deadline || null,
             priority: $("priority").value
         };

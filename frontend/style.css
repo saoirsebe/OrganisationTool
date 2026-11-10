@@ -146,6 +146,17 @@ input, textarea {
 textarea { resize: vertical; min-height: 80px; }
 .row { display: flex; gap: 12px; }
 .row > div { flex: 1; }
+.fixed-options {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.fixed-options > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .hint { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
 
