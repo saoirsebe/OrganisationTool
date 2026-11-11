@@ -58,15 +58,46 @@ const TaskPopup = {
         $("dateFixedContainer").style.display = hasDate ? 'flex' : 'none';
 
         // Show time checkbox only when both date and time exist
-        $("timeFixedContainer").style.display =
-            (hasDate && hasTime) ? 'flex' : 'none';
+        $("timeFixedContainer").style.display = hasDate && hasTime ? 'flex' : 'none';
 
         // Reset checkboxes if their inputs are removed
+        const timeIsFixed = $('timeIsFixed');
         if (!hasDate) {
-            dateIsFixed.checked = false;
-            timeIsFixed.checked = false;
+            const dateIsFixed = $('dateIsFixed');
+            if(dateIsFixed.checked){
+                dateIsFixed.checked = false;
+                timeIsFixed.checked = false;
+                timeIsFixed.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            if(hasTime){
+                taskTime.value = '';
+            }
         } else if (!hasTime) {
-            timeIsFixed.checked = false;
+            if(timeIsFixed.checked){
+                timeIsFixed.checked = false;
+                timeIsFixed.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+        }
+    },
+
+    // Hide deadline options when fixed date and time is chosen
+    // Ensures timeIsFixed is not checked if dateIsFixed is not checked
+    // Sets deadline date as task date if task date fixed
+    updateDeadlineOptions() {
+        const dateIsFixed = $('dateIsFixed');
+        const timeIsFixed = $('timeIsFixed');
+        const isTimeFixed = timeIsFixed.checked;
+
+        if (isTimeFixed) {
+            $("deadlineTitle").style.display = 'none';
+            $("deadlineContainer").style.display = 'none';
+        }
+        else{
+            $("deadlineTitle").style.display = 'flex';
+            $("deadlineContainer").style.display = 'flex';
+            if (dateIsFixed){
+                $("deadlineDate").value = $("date").value;
+            }
         }
     },
 
@@ -118,8 +149,9 @@ const TaskPopup = {
             <div><input type="number" id="durMins" min="0" max="59" placeholder="Minutes"></div>
           </div>
           
-          <label for="deadlineDate">Task deadline (Optional)</label>
-          <div class="row">
+ 
+          <label id ="deadlineTitle" for="deadlineDate">Task deadline (Optional)</label>
+          <div id ="deadlineContainer" class="row">
             <label for="deadlineDate">Date</label>
             <div><input type="date" id="deadlineDate"></div>
             <label for="deadlineTime">Time</label>
@@ -142,21 +174,26 @@ const TaskPopup = {
         $("overlay").addEventListener("click", e => { if (e.target === $("overlay")) this.close(); });
         document.addEventListener("keydown", e => { if (e.key === "Escape") this.close(); });
 
-        // Ensures timeIsFixed is only checked if dateIsFixed is checked
-        const dateIsFixed = document.getElementById('dateIsFixed');
-        const timeIsFixed = document.getElementById('timeIsFixed');
+
+        // Updates deadline options & isFixed values
+        const dateIsFixed = $("dateIsFixed");
+        const timeIsFixed = $("timeIsFixed");
         timeIsFixed.addEventListener('change', () => {
-            if (timeIsFixed.checked) {
+            if(timeIsFixed.checked && !dateIsFixed.checked){
                 dateIsFixed.checked = true;
+                // dateIsFixed.dispatchEvent(new Event("change", { bubbles: true })); // Not needed??
             }
+            this.updateDeadlineOptions()
         });
         dateIsFixed.addEventListener('change', () => {
-            if (dateIsFixed.checked === false) {
+            if(timeIsFixed.checked && !dateIsFixed.checked){
                 timeIsFixed.checked = false;
+                // dateIsFixed.dispatchEvent(new Event("change", { bubbles: true })); // Not needed??
             }
+            this.updateDeadlineOptions()
         });
 
-        // dateIsFixed only shows if date set and timeIsFixed only shows if time set with updateFixedOptions()
+        // dateIsFixed only shows if date set, timeIsFixed only shows if time set (using updateFixedOptions())
         // If time is set, option to clear time is shown with x button using updateClearTimeButton()
         const timeInput = $("time");
         const updateClearTimeButton = () => {
@@ -171,11 +208,12 @@ const TaskPopup = {
 
         $("clearTimeBtn").addEventListener("click", () => {
             timeInput.value = "";
-            timeInput.dispatchEvent(new Event("input", { bubbles: true }));
+            timeInput.dispatchEvent(new Event("input", { bubbles: true })); // Triggers event listener
         });
 
         this.updateFixedOptions();
         updateClearTimeButton();
+        this.updateDeadlineOptions();
     },
 
     open(date = "") {
