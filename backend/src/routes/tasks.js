@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const taskService = require('../services/taskService');
+const schedulerService = require('../services/schedulerService');
 
 // POST /api/tasks  -> create a task
 router.post('/', async (req, res) => {
@@ -27,7 +28,6 @@ router.post('/', async (req, res) => {
             }
         }
 
-
         const task = await taskService.createTask({
             userId,
             description: description.trim(),
@@ -41,6 +41,15 @@ router.post('/', async (req, res) => {
         });
 
         res.status(201).json(task);          // 201 = Created
+
+        if (date !== ""){
+            const isSuccess = await schedulerService.scheduleDay(userId, date);
+            if(!isSuccess.success){
+                console.error(isSuccess.error);
+                res.status(422).json({ error: 'Too many tasks in this date, please pick another date or set the date as not fixed' });
+            }
+        }
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to save task' });
@@ -50,7 +59,6 @@ router.post('/', async (req, res) => {
 
 // GET routs to get user's tasks either just by userId or UserId and specific date
 router.get('/', async (req, res) => {
-    console.log("Query parameters:", req.query);
     try {
         let tasks;
 

@@ -23,8 +23,16 @@ async function saveTaskToBackend(task) {
             priority: task.priority
         }),
     });
-    if (!res.ok) throw new Error("Save failed");
-    return await res.json();   // the saved task, including its database id
+    const result = await res.json();
+    if (!result.success) {
+        $("errorText").textContent = result.error;
+        $("errorMessage").classList.add("visible");
+        return;
+    }
+    if(!res.ok){
+        throw new Error("Save failed");
+    }
+    return result;   // the saved task, including its database id
 }
 
 async function taskDurationPredict(task) {
@@ -160,6 +168,10 @@ const TaskPopup = {
           <div id="deadlineDateError" style="display: none; color: red; font-size: 13px;">
             Please enter a deadline date if you want to specify a time.
           </div>
+          <div id="errorMessage" class="error-message">
+              <strong>Unable to schedule tasks</strong>
+              <span id="errorText"></span>
+          </div>
           
           <div class="actions">
             <button id="cancelBtn">Cancel</button>
@@ -199,7 +211,13 @@ const TaskPopup = {
         const updateClearTimeButton = () => {
             $("clearTimeBtn").style.display =  timeInput.value ? "block" : "none";
         };
-        $("date").addEventListener('input', () => this.updateFixedOptions() );
+        $("date").addEventListener('input', () => {
+            this.updateFixedOptions();
+            const errorMessage = $("errorMessage");
+            if (errorMessage.classList.contains("visible")) {
+                errorMessage.classList.remove("visible");
+            }
+        });
 
         timeInput.addEventListener('input', () => {
             this.updateFixedOptions();

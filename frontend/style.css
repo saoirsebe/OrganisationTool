@@ -262,3 +262,28 @@ textarea { resize: vertical; min-height: 80px; }
     width: 2px;
     background: #ef4444;
 }
+
+
+.error-message {
+    display: none;
+    background-color: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-left: 4px solid #DC2626;
+    color: #991B1B;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.error-message.visible {
+    display: block;
+}
+
+.error-message strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 15px;
+    color: #B91C1C;
+}
