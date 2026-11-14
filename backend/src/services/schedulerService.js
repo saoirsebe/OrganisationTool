@@ -17,7 +17,7 @@ async function scheduleDay(userId, date) {
         endOfDate.setHours(23, 59, 59, 0);
         const reversedOrderedTasks = orderedTasks.toReversed(); // Sorted by lowest priority first
         // Task with a deadline after the end of this date that is not fixed to this date
-        const movableTask = reversedOrderedTasks.find(task => task.deadline > endOfDate && !task.dateIsFixed);
+        const movableTask = reversedOrderedTasks.find(task => (task.deadline > endOfDate || task.deadline===""|| task.deadline===null ) && !task.dateIsFixed );
         if(movableTask){
             await moveTaskForward(movableTask, date);
             const index = orderedTasks.indexOf(movableTask);
